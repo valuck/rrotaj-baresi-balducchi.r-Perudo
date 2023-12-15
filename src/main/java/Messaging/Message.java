@@ -2,13 +2,15 @@ package Messaging;
 
 import com.google.gson.Gson;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 
-public class Message<T1> {
+public class Message {
     private LinkedHashMap<String, Object> data = null;
     private static PrivateKey privateKey = null;
     private static PublicKey publicKey = null;
@@ -26,8 +28,8 @@ public class Message<T1> {
         }
     }
 
-    public Message(User user, String scope, T1 data, boolean encoded) {
-        LinkedHashMap<String, Object> body = new LinkedHashMap<String, Object>();
+    public<T1> Message(User user, String scope, T1 data, boolean encoded) {
+        LinkedHashMap<String, Object> body = new LinkedHashMap<>();
         encoded = encoded && user.getEncodingKey() != null;
         String message = "";
 
@@ -51,6 +53,55 @@ public class Message<T1> {
         body.put("Encoder", encoded ? Base64.getEncoder().encodeToString(publicKey.getEncoded()) : null);
 
         this.data = body;
+    }
+
+    public Message(String receivedData) {
+        Gson gson = new Gson();
+        LinkedHashMap body = gson.fromJson(receivedData, LinkedHashMap.class);
+
+        if (body.containsKey("Encoder") && body.containsKey("Data"))
+            try {
+                String encodedData = (String) body.get("Data");
+                byte[] decoded = Base64.getDecoder().decode(encodedData.getBytes());
+
+                Cipher decryptCipher = Cipher.getInstance("RSA");
+                decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
+                byte[] decryptedFileBytes = decryptCipher.doFinal(decoded);
+
+                String message = new String(decryptedFileBytes, StandardCharsets.UTF_8);
+                Object data = gson.fromJson(message, Object.class);
+
+                body.replace("Data", data);
+            } catch (BadPaddingException e) {
+                System.err.println("Message can not be decoded: " + e.getMessage());
+                // Handle the exception accordingly
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+        this.data = body;
+    }
+
+    public String getScope() {
+        if (data != null && data.containsKey("Scope"))
+            return (String) data.get("Scope");
+
+        return null;
+    }
+
+    public Object getData() {
+        if (data != null && data.containsKey("Data"))
+            return data.get("Data");
+
+        return null;
+    }
+
+    public String getEncodingKey() {
+        if (data != null && data.containsKey("Encoder"))
+            return (String) data.get("Encoder");
+
+        return null;
     }
 
     public String toJson() {

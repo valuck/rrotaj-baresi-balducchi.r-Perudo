@@ -7,10 +7,8 @@ import java.util.Base64;
 
 public class User {
     private PublicKey encodingKey = null;
-
-    public User() {
-
-    }
+    private String currentToken;
+    private String username;
 
     public void setEncodingKey(String encodingKey) {
         try {
@@ -26,5 +24,21 @@ public class User {
 
     public PublicKey getEncodingKey() {
         return this.encodingKey;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
+    public void setCurrentToken(String currentToken) {
+        this.currentToken = currentToken;
+    }
+
+    public String getCurrentToken() {
+        return this.currentToken;
     }
 }
