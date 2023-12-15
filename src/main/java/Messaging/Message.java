@@ -1,19 +1,18 @@
 package Messaging;
 
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 
 public class Message {
-    private LinkedHashMap<String, Object> data = null;
-    private static PrivateKey privateKey = null;
-    private static PublicKey publicKey = null;
+    private LinkedTreeMap<String, Object> data;
+    private static PrivateKey privateKey;
+    private static PublicKey publicKey;
 
     static {
         try {
@@ -29,11 +28,11 @@ public class Message {
     }
 
     public<T1> Message(User user, String scope, T1 data, boolean encoded) {
-        LinkedHashMap<String, Object> body = new LinkedHashMap<>();
-        encoded = encoded && user.getEncodingKey() != null;
+        LinkedTreeMap<String, Object> body = new LinkedTreeMap<>();
+        boolean isEncoded = encoded && user.getEncodingKey() != null;
         String message = "";
 
-        if (encoded)
+        if (isEncoded)
             try {
                 message = new Gson().toJson(data);
 
@@ -49,7 +48,7 @@ public class Message {
             }
 
         body.put("Scope", scope);
-        body.put("Data", encoded ? message : data);
+        body.put("Data", isEncoded ? message : data);
         body.put("Encoder", encoded ? Base64.getEncoder().encodeToString(publicKey.getEncoded()) : null);
 
         this.data = body;
@@ -57,7 +56,7 @@ public class Message {
 
     public Message(String receivedData) {
         Gson gson = new Gson();
-        LinkedHashMap body = gson.fromJson(receivedData, LinkedHashMap.class);
+        LinkedTreeMap body = gson.fromJson(receivedData, LinkedTreeMap.class);
 
         if (body.containsKey("Encoder") && body.containsKey("Data"))
             try {
@@ -109,7 +108,7 @@ public class Message {
     }
 
     public static String getSecureString(int lenght) {
-        byte bytes[] = new byte[lenght];
+        byte[] bytes = new byte[lenght];
 
         SecureRandom random = new SecureRandom();
         random.nextBytes(bytes);

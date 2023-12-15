@@ -22,6 +22,10 @@ public class User {
         }
     }
 
+    public void setEncodingKey(PublicKey encodingKey) {
+        this.encodingKey = encodingKey;
+    }
+
     public PublicKey getEncodingKey() {
         return this.encodingKey;
     }

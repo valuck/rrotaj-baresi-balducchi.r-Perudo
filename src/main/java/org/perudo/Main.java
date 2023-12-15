@@ -1,10 +1,25 @@
 package org.perudo;
 
+import Messaging.DataUnion;
+import Messaging.Message;
+
+import java.util.LinkedHashMap;
+
 public class Main {
     public static void main(String[] args) {
         // Server testing
         new Thread(new ServerInterface(3000)).start();
-        new Thread(new ClientInterface("localhost", 3000)).start();
+
+        ClientInterface client = new ClientInterface("localhost", 3000);
+        new Thread(client).start();
+
+        client.initConnection();
+
+        LinkedHashMap<String, String> data = new LinkedHashMap<>();
+        data.put("Username", "Rich");
+        data.put("Token", null);
+
+        client.sendMessage("Info", data, true);
 
         /*
         LinkedHashMap<String, Integer> data = new LinkedHashMap<>();

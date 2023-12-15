@@ -1,5 +1,7 @@
 package org.perudo;
 
+import Messaging.Message;
+import Messaging.User;
 import Storage.ServerStorage;
 
 import java.io.IOException;
@@ -7,7 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ServerInterface implements Runnable {
-    private ServerSocket serverSocket;
+    private final ServerSocket serverSocket;
     private boolean running = true;
 
     public ServerInterface(int port) {
