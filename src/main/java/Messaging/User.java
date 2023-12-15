@@ -1,14 +1,23 @@
 package Messaging;
 
+import org.perudo.ClientHandler;
+
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.LinkedList;
 
 public class User {
+    private static final LinkedList<User> users = new LinkedList<>();
     private PublicKey encodingKey = null;
+    private ClientHandler handler;
     private String currentToken;
     private String username;
+
+    public User() {
+        users.add(this);
+    }
 
     public void setEncodingKey(String encodingKey) {
         try {
@@ -20,6 +29,27 @@ public class User {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static LinkedList<User> getUsers() {
+        return users;
+    }
+
+    public static User getUserByName(String username) {
+        for (int i=0; i<users.size(); i++) {
+            User user = users.get(i);
+            if (user != null) {
+                String userName = user.getUsername();
+                if (userName != null && userName.equals(username))
+                    return user;
+            }
+        }
+
+        return null;
+    }
+
+    public static void removeByHandler(ClientHandler handler) {
+        users.remove(handler);
     }
 
     public void setEncodingKey(PublicKey encodingKey) {
@@ -44,5 +74,13 @@ public class User {
 
     public String getCurrentToken() {
         return this.currentToken;
+    }
+
+    public void setHandler(ClientHandler handler) {
+        this.handler = handler;
+    }
+
+    public ClientHandler getHandler() {
+        return this.handler;
     }
 }

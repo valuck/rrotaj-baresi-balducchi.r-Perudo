@@ -3,7 +3,6 @@ package org.perudo;
 import Messaging.DataUnion;
 import Messaging.Message;
 import Messaging.User;
-import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.io.BufferedReader;
@@ -11,31 +10,40 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 
 public class ClientHandler implements Runnable {
-    private static final LinkedList<User> users = new LinkedList<>();
     private final Socket clientSocket;
     private User user = new User();
+    private BufferedReader in;
+    private PrintWriter out;
 
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
+
+        try {
+            this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            this.out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+            this.user.setHandler(this);
+        } catch (Exception e) {
+            System.err.println("Error while initializing the client");
+            e.printStackTrace();
+
+            this.close();
+        }
     }
 
     @Override
     public void run() {
-        try (
-                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
-        ) {
+        try {
             String inputLine;
-            while ((inputLine = reader.readLine()) != null) {
+            while ((inputLine = in.readLine()) != null) {
                 try {
                     System.out.println("Received from client: " + inputLine);
                     // Process inputLine if needed and send a response back
                     // writer.println("Server received: " + inputLine);
 
-                    Boolean toEncode = false;
+                    boolean toEncode = false;
                     Message message = new Message(inputLine);
                     LinkedHashMap<String, DataUnion> newData = new LinkedHashMap<>();
 
@@ -94,7 +102,7 @@ public class ClientHandler implements Runnable {
                     }
 
                     Message response = new Message(this.user, scope, newData, toEncode);
-                    writer.println(response.toJson());
+                    out.println(response.toJson());
                 } catch (Exception e) {
                     System.err.println("Error while processing the client message: ");
                     e.printStackTrace();
@@ -103,13 +111,35 @@ public class ClientHandler implements Runnable {
         } catch (Exception e) {
             System.err.println("Error while handling the client: ");
             e.printStackTrace();
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (Exception e) {
-                System.err.println("Error while force-closing clientSocket: ");
-                e.printStackTrace();
-            }
         }
+
+        this.close();
+    }
+
+    public User getUser() {
+        return this.user;
+    }
+
+    public void sendMessage(String scope, Object data, boolean encode) {
+        Message message = new Message(this.user, scope, data, encode);
+        out.println(message.toJson());
+    }
+
+    public void close() {
+        try {
+            User.removeByHandler(this);
+            clientSocket.close();
+        } catch (Exception e) {
+            System.err.println("Error while closing clientSocket: ");
+            e.printStackTrace();
+        }
+    }
+
+    public static void replicateMessage(String scope, Object data, boolean encode) { // Sends the message to all the users
+        User.getUsers().forEach((user) -> {
+            ClientHandler handler = user.getHandler();
+            if (handler != null)
+                handler.sendMessage(scope, data, encode);
+        });
     }
 }

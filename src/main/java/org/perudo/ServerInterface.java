@@ -1,7 +1,5 @@
 package org.perudo;
 
-import Messaging.Message;
-import Messaging.User;
 import Storage.ServerStorage;
 
 import java.io.IOException;

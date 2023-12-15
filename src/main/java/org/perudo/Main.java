@@ -1,14 +1,14 @@
 package org.perudo;
 
-import Messaging.DataUnion;
-import Messaging.Message;
+import Messaging.User;
 
 import java.util.LinkedHashMap;
 
 public class Main {
     public static void main(String[] args) {
         // Server testing
-        new Thread(new ServerInterface(3000)).start();
+        ServerInterface server = new ServerInterface(3000);
+        new Thread(server).start();
 
         ClientInterface client = new ClientInterface("localhost", 3000);
         new Thread(client).start();
@@ -20,6 +20,22 @@ public class Main {
         data.put("Token", null);
 
         client.sendMessage("Info", data, true);
+
+
+        try { // wait client to load
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        User target = User.getUserByName("Rich");
+        if (target != null) { // If user found
+            ClientHandler targetClient = target.getHandler();
+            if (targetClient != null) // If client handler is connected
+                targetClient.sendMessage("Campo", "Alura!", false);
+        }
+
+        ClientHandler.replicateMessage("Campo2", "Mat!", false);
 
         /*
         LinkedHashMap<String, Integer> data = new LinkedHashMap<>();
