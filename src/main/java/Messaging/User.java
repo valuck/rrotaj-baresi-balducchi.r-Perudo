@@ -49,7 +49,11 @@ public class User {
     }
 
     public static void removeByHandler(ClientHandler handler) {
-        users.remove(handler);
+        for (int i=0; i<users.size(); i++) {
+            User user = users.get(i);
+            if (user != null && user.handler == handler)
+                users.remove(user);
+        }
     }
 
     public void setEncodingKey(PublicKey encodingKey) {

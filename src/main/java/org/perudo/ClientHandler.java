@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
-    private User user = new User();
+    private final User user = new User();
     private BufferedReader in;
     private PrintWriter out;
 
@@ -129,6 +129,7 @@ public class ClientHandler implements Runnable {
         try {
             User.removeByHandler(this);
             clientSocket.close();
+            System.out.println("Client socket closed");
         } catch (Exception e) {
             System.err.println("Error while closing clientSocket: ");
             e.printStackTrace();

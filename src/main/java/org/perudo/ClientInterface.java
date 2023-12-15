@@ -2,9 +2,7 @@ package org.perudo;
 
 import Messaging.Message;
 import Messaging.User;
-import com.google.gson.Gson;
 
-import javax.lang.model.type.NullType;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -62,6 +60,7 @@ public class ClientInterface implements Runnable {
                 if (out != null) out.close();
                 if (clientSocket != null && !clientSocket.isClosed()) {
                     clientSocket.close();
+                    System.out.println("Client closed");
                 }
             } catch (Exception e) {
                 System.err.println("Error while closing the client: " + e);

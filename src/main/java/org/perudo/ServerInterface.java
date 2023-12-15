@@ -35,28 +35,31 @@ public class ServerInterface implements Runnable {
                 // Create a new thread for each incoming client
                 new Thread(new ClientHandler(clientSocket)).start();
             }
+
+            try {
+                if (this.serverSocket != null) {
+                    this.serverSocket.close(); // Close the ServerSocket to interrupt accept()
+                    System.out.println("Server closed");
+                }
+            } catch (Exception e) {
+                System.err.println("Error while shutting down the server: " + e);
+            }
         } catch (Exception e) {
-            System.err.println("Error while listening for clients: " + e);
+            System.err.println("Error while listening for clients: ");
+            e.printStackTrace();
         } finally {
             try {
                 if (serverSocket != null)
                     serverSocket.close();
 
             } catch (IOException e) {
-                System.err.println("Error while force-closing the server: " + e);
+                System.err.println("Error while force-closing the server: ");
+                e.printStackTrace();
             }
         }
     }
 
     public void shutdown() {
         this.running = false;
-
-        try {
-            if (this.serverSocket != null) {
-                this.serverSocket.close(); // Close the ServerSocket to interrupt accept()
-            }
-        } catch (Exception e) {
-            System.err.println("Error while shutting down the server: " + e);
-        }
     }
 }

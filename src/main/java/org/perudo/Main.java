@@ -37,6 +37,15 @@ public class Main {
 
         ClientHandler.replicateMessage("Campo2", "Mat!", false);
 
+        try { // wait
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        server.shutdown();
+        client.close();
+
         /*
         LinkedHashMap<String, Integer> data = new LinkedHashMap<>();
         data.put("Mat", 10);
