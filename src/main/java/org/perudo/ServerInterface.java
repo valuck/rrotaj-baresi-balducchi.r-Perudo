@@ -12,7 +12,7 @@ public class ServerInterface implements Runnable {
 
     public ServerInterface(int port) {
         try {
-            ServerStorage.setup();
+            this.running = ServerStorage.setup(); // If fails it closes the server
             this.serverSocket = new ServerSocket(port);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -30,7 +30,7 @@ public class ServerInterface implements Runnable {
                 if (!this.running)
                     break; // Exits the loop if shutting down
 
-                System.out.println("New client connected: " + clientSocket);
+                System.out.println("[SERVER]: New client connected: " + clientSocket);
 
                 // Create a new thread for each incoming client
                 new Thread(new ClientHandler(clientSocket)).start();
@@ -39,7 +39,7 @@ public class ServerInterface implements Runnable {
             try {
                 if (this.serverSocket != null) {
                     this.serverSocket.close(); // Close the ServerSocket to interrupt accept()
-                    System.out.println("Server closed");
+                    System.out.println("[SERVER]: Closed");
                 }
             } catch (Exception e) {
                 System.err.println("Error while shutting down the server: " + e);

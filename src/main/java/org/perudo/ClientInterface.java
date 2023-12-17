@@ -6,13 +6,14 @@ import Messaging.User;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Objects;
 
 public class ClientInterface implements Runnable {
-    private final Socket clientSocket;
-    private final BufferedReader in;
-    private final PrintWriter out;
+    private Socket clientSocket;
+    private BufferedReader in;
+    private PrintWriter out;
     private boolean running = true;
     private User server;
 
@@ -21,7 +22,13 @@ public class ClientInterface implements Runnable {
             this.clientSocket = new Socket(address, port);
             this.out = new PrintWriter(clientSocket.getOutputStream(), true);
             this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            this.running = true;
+        } catch (ConnectException e) {
+            this.running = false;
+            System.err.println("Server connection refused!");
         } catch (Exception e) {
+            this.running = false;
             throw new RuntimeException(e);
         }
     }
@@ -71,6 +78,9 @@ public class ClientInterface implements Runnable {
     }
 
     public void initConnection() {
+        if (!this.running)
+            return;
+
         this.server = new User();
         this.server.setUsername("Server");
 
@@ -79,6 +89,11 @@ public class ClientInterface implements Runnable {
     }
 
     public void sendMessage(String scope, Object data, boolean encode) {
+        if (!this.running) {
+            System.err.println("Unable to send message, client is closed!");
+            return;
+        }
+
         if (!Objects.equals(scope, "Connection"))
             while (this.server.getEncodingKey() == null) {
                 try { // Yields until the server replies
