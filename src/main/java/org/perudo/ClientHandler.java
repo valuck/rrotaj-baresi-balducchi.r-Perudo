@@ -137,10 +137,10 @@ public class ClientHandler implements Runnable {
     }
 
     public static void replicateMessage(String scope, Object data, boolean encode) { // Sends the message to all the users
-        User.getUsers().forEach((user) -> {
+        for (User user : User.getUsers()) {
             ClientHandler handler = user.getHandler();
             if (handler != null)
                 handler.sendMessage(scope, data, encode);
-        });
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.perudo;
 
 import Messaging.User;
+import Storage.ServerStorage;
 
 import java.util.LinkedHashMap;
 
@@ -21,12 +22,15 @@ public class Main {
 
         client.sendMessage("Info", data, true);
 
-
         try { // wait client to load
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        System.err.println(ServerStorage.eraseDatabase(true));
+        System.out.println(ServerStorage.newLobby(4));
+        System.err.println(ServerStorage.incrementLobbyShift(1));
 
         User target = User.getUserByName("Rich");
         if (target != null) { // If user found
