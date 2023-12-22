@@ -29,8 +29,10 @@ public class Main {
         }
 
         System.err.println(ServerStorage.eraseDatabase(true));
-        System.out.println(ServerStorage.newLobby(4));
-        System.err.println(ServerStorage.incrementLobbyShift(1));
+        System.err.println(ServerStorage.newLobby(4));
+        System.out.println(ServerStorage.newToken(1));
+        System.out.println(ServerStorage.newToken(1));
+        System.out.println(ServerStorage.newToken(1));
 
         User target = User.getUserByName("Rich");
         if (target != null) { // If user found
@@ -46,7 +48,7 @@ public class Main {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
+        System.out.println(ServerStorage.newToken(1));
         server.shutdown();
         client.close();
 

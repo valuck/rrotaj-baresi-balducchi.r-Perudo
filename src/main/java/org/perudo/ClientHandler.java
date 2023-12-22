@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
@@ -137,7 +138,10 @@ public class ClientHandler implements Runnable {
     }
 
     public static void replicateMessage(String scope, Object data, boolean encode) { // Sends the message to all the users
-        for (User user : User.getUsers()) {
+        LinkedList<User> users = User.getUsers();
+
+        for (int i = 0; i < users.size(); i++) {
+            User user = users.get(i);
             ClientHandler handler = user.getHandler();
             if (handler != null)
                 handler.sendMessage(scope, data, encode);
