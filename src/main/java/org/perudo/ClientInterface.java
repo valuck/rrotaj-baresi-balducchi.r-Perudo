@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Objects;
 
 public class ClientInterface implements Runnable {
@@ -24,6 +25,7 @@ public class ClientInterface implements Runnable {
             this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
             this.running = true;
+            this.initConnection();
         } catch (ConnectException e) {
             this.running = false;
             System.err.println("Server connection refused!");
@@ -37,12 +39,13 @@ public class ClientInterface implements Runnable {
     public void run() {
         try {
             while (this.running) {
+                System.out.println("sos?");
                 try {
                     String serverResponse = in.readLine();
                     if (serverResponse != null) {
                         System.out.println("Server response: " + serverResponse);
 
-                        Message response = new Message(serverResponse);
+                        Message response = new Message(this.server, serverResponse);
                         String encoder = response.getEncodingKey();
                         String scope = response.getScope();
 
@@ -56,22 +59,15 @@ public class ClientInterface implements Runnable {
 
                         //System.err.println(this.server.getEncodingKey());
                     }
+                } catch (SocketException e) {
+                    // Socket is closing, ignore.
                 } catch (Exception e) {
                     System.err.println("Error on processing server message: " );
                     e.printStackTrace();
                 }
             }
 
-            try {
-                if (in != null) in.close();
-                if (out != null) out.close();
-                if (clientSocket != null && !clientSocket.isClosed()) {
-                    clientSocket.close();
-                    System.out.println("Client closed");
-                }
-            } catch (Exception e) {
-                System.err.println("Error while closing the client: " + e);
-            }
+            System.out.println("Client closed");
         } catch (Exception e) {
             throw new RuntimeException("Error while listening for the server" + e);
         }
@@ -109,5 +105,15 @@ public class ClientInterface implements Runnable {
 
     public void close() {
         this.running = false;
+
+        try {
+            if (this.in != null) this.in.close();
+            if (this.out != null) this.out.close();
+            if (this.clientSocket != null && !this.clientSocket.isClosed()) {
+                this.clientSocket.close();
+            }
+        } catch (Exception e) {
+            System.err.println("Error while closing the client: " + e);
+        }
     }
 }

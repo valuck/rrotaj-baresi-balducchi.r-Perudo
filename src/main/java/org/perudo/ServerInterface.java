@@ -2,9 +2,9 @@ package org.perudo;
 
 import Storage.ServerStorage;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class ServerInterface implements Runnable {
     private final ServerSocket serverSocket;
@@ -44,22 +44,27 @@ public class ServerInterface implements Runnable {
             } catch (Exception e) {
                 System.err.println("Error while shutting down the server: " + e);
             }
-        } catch (Exception e) {
+        } catch (SocketException e) {
+            // Socket is closing, ignore.
+        }
+        catch (Exception e) {
             System.err.println("Error while listening for clients: ");
             e.printStackTrace();
-        } finally {
-            try {
-                if (serverSocket != null)
-                    serverSocket.close();
-
-            } catch (IOException e) {
-                System.err.println("Error while force-closing the server: ");
-                e.printStackTrace();
-            }
         }
+
+        System.out.println("Server closed");
     }
 
     public void shutdown() {
         this.running = false;
+
+        try {
+            if (this.serverSocket != null && !this.serverSocket.isClosed()) {
+                this.serverSocket.close();
+            }
+        } catch (Exception e) {
+            System.err.println("Error while closing client socket:");
+            e.printStackTrace();
+        }
     }
 }

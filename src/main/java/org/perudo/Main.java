@@ -1,8 +1,5 @@
 package org.perudo;
 
-import Messaging.User;
-import Storage.ServerStorage;
-
 import java.util.LinkedHashMap;
 
 public class Main {
@@ -14,7 +11,7 @@ public class Main {
         ClientInterface client = new ClientInterface("localhost", 3000);
         new Thread(client).start();
 
-        client.initConnection();
+        //client.initConnection();
 
         LinkedHashMap<String, String> data = new LinkedHashMap<>();
         data.put("Username", "Rich");
@@ -28,11 +25,13 @@ public class Main {
             throw new RuntimeException(e);
         }
 
+        /*
         System.err.println(ServerStorage.eraseDatabase(true));
         System.err.println(ServerStorage.newLobby(4));
         System.out.println(ServerStorage.newToken(1));
         System.out.println(ServerStorage.newToken(1));
         System.out.println(ServerStorage.newToken(1));
+
 
         User target = User.getUserByName("Rich");
         if (target != null) { // If user found
@@ -42,13 +41,14 @@ public class Main {
         }
 
         ClientHandler.replicateMessage("Campo2", "Mat!", false);
+        */
 
         try { // wait
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        System.out.println(ServerStorage.newToken(1));
+
         server.shutdown();
         client.close();
 

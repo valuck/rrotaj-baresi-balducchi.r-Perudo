@@ -2,6 +2,7 @@ package org.perudo;
 
 import Messaging.DataUnion;
 import Messaging.Message;
+import Messaging.SignatureException;
 import Messaging.User;
 import com.google.gson.internal.LinkedTreeMap;
 
@@ -38,6 +39,10 @@ public class ClientHandler implements Runnable {
     public void run() {
         try {
             String inputLine;
+
+            LinkedHashMap<String, DataUnion> newData = new LinkedHashMap<>();
+            Message response = null;
+
             while ((inputLine = in.readLine()) != null) {
                 try {
                     System.out.println("Received from client: " + inputLine);
@@ -45,8 +50,7 @@ public class ClientHandler implements Runnable {
                     // writer.println("Server received: " + inputLine);
 
                     boolean toEncode = false;
-                    Message message = new Message(inputLine);
-                    LinkedHashMap<String, DataUnion> newData = new LinkedHashMap<>();
+                    Message message = new Message(this.user, inputLine);
 
                     // Set encoding key for RSA encryption if sent
                     String encoder = message.getEncodingKey();
@@ -102,12 +106,22 @@ public class ClientHandler implements Runnable {
                         newData.put("Error", new DataUnion("Missing scope"));
                     }
 
-                    Message response = new Message(this.user, scope, newData, toEncode);
-                    out.println(response.toJson());
+                    response = new Message(this.user, scope, newData, toEncode);
+                } catch (SignatureException e) {
+                    newData.put("Success", new DataUnion(false));
+                    newData.put("Error", new DataUnion(e.getMessage()));
                 } catch (Exception e) {
                     System.err.println("Error while processing the client message: ");
                     e.printStackTrace();
+
+                    newData.put("Success", new DataUnion(false));
+                    newData.put("Error", new DataUnion("Server exception!"));
                 }
+
+                if (response == null)
+                    response = new Message(this.user, "Exception", newData, false);
+
+                out.println(response.toJson());
             }
         } catch (Exception e) {
             System.err.println("Error while handling the client: ");
