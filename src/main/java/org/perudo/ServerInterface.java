@@ -7,13 +7,17 @@ import java.net.Socket;
 import java.net.SocketException;
 
 public class ServerInterface implements Runnable {
-    private final ServerSocket serverSocket;
-    private boolean running = true;
+    private static ServerSocket serverSocket;
+    private static boolean running;
 
     public ServerInterface(int port) {
+        if (serverSocket != null) // Checks if the server has already been initialized
+            throw new RuntimeException("Server is already initialized");
+
         try {
-            this.running = ServerStorage.setup(); // If fails it closes the server
-            this.serverSocket = new ServerSocket(port);
+            // Open a new serverSocket to the selected port after setting up the database
+            running = ServerStorage.setup(); // If fails it closes the server
+            serverSocket = new ServerSocket(port);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -24,10 +28,10 @@ public class ServerInterface implements Runnable {
         System.out.println("[SERVER]: Online");
 
         try {
-            while (this.running) {
-                Socket clientSocket = serverSocket.accept();
+            while (running) { // Listen for clients to connect
+                Socket clientSocket = serverSocket.accept(); // it yields until a new client is connected
 
-                if (!this.running)
+                if (!running)
                     break; // Exits the loop if shutting down
 
                 System.out.println("[SERVER]: New client connected: " + clientSocket);
@@ -37,10 +41,11 @@ public class ServerInterface implements Runnable {
             }
 
             try {
-                if (this.serverSocket != null) {
-                    this.serverSocket.close(); // Close the ServerSocket to interrupt accept()
+                if (serverSocket != null) {
+                    serverSocket.close(); // close the ServerSocket to interrupt accept()
                     System.out.println("[SERVER]: Closed");
                 }
+
             } catch (Exception e) {
                 System.err.println("Error while shutting down the server: " + e);
             }
@@ -53,15 +58,18 @@ public class ServerInterface implements Runnable {
         }
 
         System.out.println("Server closed");
+        serverSocket = null;
     }
 
-    public void shutdown() {
-        this.running = false;
+    public static void shutdown() {
+        // stop listening for clients to connect
+        running = false;
 
         try {
-            if (this.serverSocket != null && !this.serverSocket.isClosed()) {
-                this.serverSocket.close();
-            }
+            // close the server socket
+            if (serverSocket != null && !serverSocket.isClosed())
+                serverSocket.close();
+
         } catch (Exception e) {
             System.err.println("Error while closing client socket:");
             e.printStackTrace();

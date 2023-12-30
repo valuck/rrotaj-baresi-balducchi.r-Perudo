@@ -16,6 +16,7 @@ public class Message {
 
     static {
         try {
+            // Generate RSA keys
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(2048);
             KeyPair pair = generator.generateKeyPair();
@@ -27,7 +28,12 @@ public class Message {
         }
     }
 
+    private boolean structureCheck() {
+        return data != null && data.containsKey("Content");
+    }
+
     public<T1> Message(User user, String scope, T1 data, boolean encoded) {
+        // Build a new message for the specified user
         LinkedTreeMap<String, Object> body = new LinkedTreeMap<>();
         boolean isEncoded = encoded && user.getEncodingKey() != null;
         Base64.Encoder encoder = Base64.getEncoder();
@@ -38,34 +44,39 @@ public class Message {
             try {
                 message = gson.toJson(data);
 
+                // Encode the message's json using the receiver's public RSA key
                 Cipher encryptCipher = Cipher.getInstance("RSA");
                 encryptCipher.init(Cipher.ENCRYPT_MODE, user.getEncodingKey());
 
                 byte[] secretMessageBytes = message.getBytes(StandardCharsets.UTF_8);
                 byte[] encryptedMessageBytes = encryptCipher.doFinal(secretMessageBytes);
 
+                // Encode bytes to Base64
                 message = encoder.encodeToString(encryptedMessageBytes);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
 
+        // Setup inner message structure
         LinkedTreeMap<String, Object> allData = new LinkedTreeMap<>();
 
-        allData.put("Scope", scope);
-        allData.put("Data", isEncoded ? message : data);
-        allData.put("Encoder", encoded ? encoder.encodeToString(publicKey.getEncoded()) : null);
+        allData.put("Scope", scope); // Determinate the action
+        allData.put("Data", isEncoded ? message : data); // Encoded or Raw data
+        allData.put("Encoder", encoded ? encoder.encodeToString(publicKey.getEncoded()) : null); // Public RSA key for the response
 
         // Prevent json parsing problems (Ex: 0 -> 0.0)
         String predictedResult = gson.toJson(gson.fromJson(gson.toJson(allData), LinkedTreeMap.class));
-        String encodedContent = encoder.encodeToString(predictedResult.getBytes());
+        String encodedContent = encoder.encodeToString(predictedResult.getBytes()); // Used to generate the signature
 
         try {
+            // Generate signature with RSA keys
             Signature signature = Signature.getInstance("SHA256withRSA");
             signature.initSign(privateKey);
             signature.update(encodedContent.getBytes());
 
-            body.put("Content", allData);
-            body.put("Signature", encoder.encodeToString(signature.sign()));
+            // Setup final message structure
+            body.put("Content", allData); // Inner message structure
+            body.put("Signature", encoder.encodeToString(signature.sign())); // Message signature in Base64
 
             this.data = body;
         } catch (Exception e) {
@@ -75,32 +86,35 @@ public class Message {
     }
 
     public Message(User user, String receivedData) throws SignatureException {
+        // Build a message from the received data, knowing the sender
         Gson gson = new Gson();
-        LinkedTreeMap body = gson.fromJson(receivedData, LinkedTreeMap.class);
         Base64.Decoder decoder = Base64.getDecoder();
+        LinkedTreeMap body = gson.fromJson(receivedData, LinkedTreeMap.class); // Retrieve data from json string
 
-        if (body.containsKey("Content")) {
-            LinkedTreeMap content = (LinkedTreeMap) body.get("Content");
+        if (body.containsKey("Content")) { // Checks for the message structure
+            LinkedTreeMap content = (LinkedTreeMap) body.get("Content"); // Get inner structure
 
-            System.err.println(content.get("Scope"));
-
+            // Connection scope can have no signature since it's needed to initialize the communication and share RSA keys.
             if (content.containsKey("Scope") && !content.get("Scope").equals("Connection"))
-                if (body.containsKey("Signature"))
-                    if (user.getEncodingKey() != null) // First message should load it.
+                if (body.containsKey("Signature")) // Checks for the message signature.
+                    if (user.getEncodingKey() != null)
                         try {
+                            // Generate the signature from the received data
                             String ogSignature = Base64.getEncoder().encodeToString(gson.toJson(content).getBytes());
                             byte[] signatureReceived = decoder.decode((String) body.get("Signature"));
 
+                            // Compare the generated signature with the received one using the sender public RSA key.
                             Signature signature = Signature.getInstance("SHA256withRSA");
                             signature.initVerify(user.getEncodingKey());
                             signature.update(ogSignature.getBytes());
 
-                            if (!signature.verify(signatureReceived)) {
+                            if (!signature.verify(signatureReceived)) { // If the signature isn't valid
                                 throw new SignatureException("Invalid message signature!");
                             }
 
-                        } catch (SignatureException e) {
+                        } catch (SignatureException e) { // Invalid signature re-thrower.
                             throw new SignatureException(e.getMessage());
+
                         } catch (Exception e) {
                             System.err.println("Unable to verify the message signature.");
                             e.printStackTrace();
@@ -113,18 +127,23 @@ public class Message {
                     return;
                 }
 
+                // Checks if the message was encoded
             if (content.containsKey("Encoder") && content.containsKey("Data"))
                 try {
+                    // Decode original data's Json from Base64
                     String encodedData = (String) content.get("Data");
                     byte[] decoded = Base64.getDecoder().decode(encodedData.getBytes());
 
+                    // Decode with the receiver's private RSA key
                     Cipher decryptCipher = Cipher.getInstance("RSA");
                     decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
                     byte[] decryptedFileBytes = decryptCipher.doFinal(decoded);
 
+                    // Convert the decoded Json back to original data (as Object)
                     String message = new String(decryptedFileBytes, StandardCharsets.UTF_8);
                     Object data = gson.fromJson(message, Object.class);
 
+                    // Replace into the inner message structure
                     content.replace("Data", data);
                 } catch (BadPaddingException e) {
                     System.err.println("Message can not be decoded: " + e.getMessage());
@@ -133,8 +152,9 @@ public class Message {
                     throw new RuntimeException(e);
                 }
 
+            // Replace changes into the final message structure
             body.replace("Content", content);
-            this.data = body;
+            this.data = body; // Set the new message's raw data
         }
         else {
             System.err.println("Missing content");
@@ -143,37 +163,31 @@ public class Message {
     }
 
     public String getScope() {
-        if (data != null && data.containsKey("Content") && ((LinkedTreeMap) data.get("Content")).containsKey("Scope"))
+        // returns the message's scope if present
+        if (structureCheck() && ((LinkedTreeMap) data.get("Content")).containsKey("Scope"))
             return (String) ((LinkedTreeMap) data.get("Content")).get("Scope");
 
         return null;
     }
 
     public Object getData() {
-        if (data != null && data.containsKey("Content") && ((LinkedTreeMap) data.get("Content")).containsKey("Data"))
+        // returns the message's data if present
+        if (structureCheck() && ((LinkedTreeMap) data.get("Content")).containsKey("Data"))
             return ((LinkedTreeMap) data.get("Content")).get("Data");
 
         return null;
     }
 
     public String getEncodingKey() {
-        if (data != null && data.containsKey("Content") && ((LinkedTreeMap) data.get("Content")).containsKey("Encoder"))
+        // returns the sender's public RSA key if present
+        if (structureCheck() && ((LinkedTreeMap) data.get("Content")).containsKey("Encoder"))
             return (String) ((LinkedTreeMap) data.get("Content")).get("Encoder");
 
         return null;
     }
 
     public String toJson() {
+        // Returns the message's data in json
         return new Gson().toJson(this.data);
-    }
-
-    public static String getSecureString(int lenght) {
-        byte[] bytes = new byte[lenght];
-
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(bytes);
-
-        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-        return encoder.encodeToString(bytes);
     }
 }

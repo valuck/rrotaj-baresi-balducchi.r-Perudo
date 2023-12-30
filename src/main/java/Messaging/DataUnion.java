@@ -10,45 +10,41 @@ public class DataUnion {
     private float flo;
 
     private void fromMap(LinkedTreeMap<String, Object> map) {
-        map.forEach((key, value) -> {
-            System.out.println(key + " " + value);
-        });
+        // This is used to convert back from Json
 
         if (map.containsKey("bool")) {
-            this.bool = (boolean) map.get("bool");
+            this.bool = (Boolean) map.get("bool");
         }
+
         if (map.containsKey("doub")) {
             Object value = map.get("doub");
             if (value instanceof Double) {
-                this.doub = ((Double) value).doubleValue();
+                this.doub = ((Double) value);
             } else if (value instanceof Float) {
                 this.doub = ((Float) value).doubleValue();
-            } else {
-                // Handle other types as needed
             }
         }
+
         if (map.containsKey("flo")) {
             Object value = map.get("flo");
             if (value instanceof Double) {
                 this.flo = ((Double) value).floatValue();
             } else if (value instanceof Float) {
-                this.flo = (float) value;
-            } else {
-                // Handle other types as needed
+                this.flo = (Float) value;
             }
         }
+
         if (map.containsKey("integer")) {
             Object value = map.get("integer");
             if (value instanceof Integer) {
-                this.integer = (int) value;
+                this.integer = (Integer) value;
             } else if (value instanceof Double) {
                 this.integer = ((Double) value).intValue();
             } else if (value instanceof Float) {
                 this.integer = ((Float) value).intValue();
-            } else {
-                // Handle other types as needed
             }
         }
+
         if (map.containsKey("string")) {
             this.string = (String) map.get("string");
         }

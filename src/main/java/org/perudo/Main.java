@@ -1,6 +1,5 @@
 package org.perudo;
-
-import Storage.ClientStorage;
+import Messaging.User;
 import Storage.ServerStorage;
 
 import java.util.LinkedHashMap;
@@ -43,8 +42,8 @@ public class Main {
         System.err.println(ServerStorage.newLobby(4));
         System.out.println(ServerStorage.newToken(1));
         System.out.println(ServerStorage.newToken(1));
-        System.out.println(ServerStorage.newToken(1));
-
+        System.out.println(ServerStorage.getLobbyByToken(ServerStorage.newToken(1)));
+        */
 
         User target = User.getUserByName("Rich");
         if (target != null) { // If user found
@@ -54,7 +53,6 @@ public class Main {
         }
 
         ClientHandler.replicateMessage("Campo2", "Mat!", false);
-        */
 
         try { // wait
             Thread.sleep(1000);
