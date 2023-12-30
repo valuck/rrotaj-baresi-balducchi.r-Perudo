@@ -1,5 +1,8 @@
 package org.perudo;
 
+import Storage.ClientStorage;
+import Storage.ServerStorage;
+
 import java.util.LinkedHashMap;
 
 public class Main {
@@ -25,7 +28,17 @@ public class Main {
             throw new RuntimeException(e);
         }
 
-        /*
+        /* Client database example
+        ClientStorage.loadSettings();
+        ServerStorage.eraseDatabase(true);
+        ServerStorage.newLobby(4);
+
+        System.err.println(ClientStorage.getSetting("Token"));
+        System.err.println("Alura " + ClientStorage.updateSetting("Token", ServerStorage.newToken(1), true));
+        System.err.println(ClientStorage.getSetting("Token"));
+        */
+
+        /* Server database example
         System.err.println(ServerStorage.eraseDatabase(true));
         System.err.println(ServerStorage.newLobby(4));
         System.out.println(ServerStorage.newToken(1));
