@@ -1,12 +1,15 @@
 package org.perudo;
 
+import Messaging.User;
 import Storage.ServerStorage;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.LinkedList;
 
 public class ServerInterface implements Runnable {
+    private static final int softShutdownTime = 5000;
     private static ServerSocket serverSocket;
     private static boolean running;
 
@@ -67,6 +70,13 @@ public class ServerInterface implements Runnable {
 
         try {
             // close the server socket
+            LinkedList<User> users = User.getUsers();
+            for (int i=0; i<users.size(); i++) {
+                ClientHandler handler = users.get(i).getHandler();
+                if (handler != null)
+                    handler.close();
+            }
+
             if (serverSocket != null && !serverSocket.isClosed())
                 serverSocket.close();
 
@@ -74,5 +84,17 @@ public class ServerInterface implements Runnable {
             System.err.println("Error while closing client socket:");
             e.printStackTrace();
         }
+    }
+
+    public static void softShutdown() {
+        ClientHandler.replicateMessage("Shutdown", "Shutting down in " + softShutdownTime, true);
+
+        try {
+            Thread.sleep(softShutdownTime);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        shutdown();
     }
 }

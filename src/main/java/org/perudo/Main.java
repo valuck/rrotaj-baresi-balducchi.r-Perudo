@@ -60,8 +60,9 @@ public class Main {
             throw new RuntimeException(e);
         }
 
-        server.shutdown();
-        client.close();
+        ServerInterface.softShutdown();
+        //client.close();
+        //client.sendMessage("Gay", 1, false);
 
         /*
         LinkedHashMap<String, Integer> data = new LinkedHashMap<>();

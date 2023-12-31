@@ -1,9 +1,7 @@
 package Storage;
 
-import com.mysql.cj.Query;
 import com.mysql.cj.jdbc.exceptions.CommunicationsException;
 
-import javax.swing.text.TabableView;
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.UUID;

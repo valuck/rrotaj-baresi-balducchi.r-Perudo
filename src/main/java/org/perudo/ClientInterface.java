@@ -2,6 +2,7 @@ package org.perudo;
 
 import Messaging.Message;
 import Messaging.User;
+import com.google.gson.internal.LinkedTreeMap;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -9,9 +10,12 @@ import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.sql.Timestamp;
 import java.util.Objects;
 
 public class ClientInterface implements Runnable {
+    private Timestamp ping_start;
+    private Timestamp ping_end;
     private Socket clientSocket;
     private BufferedReader in;
     private PrintWriter out;
@@ -28,6 +32,42 @@ public class ClientInterface implements Runnable {
             this.running = true;
             this.initConnection(); // Initialize connection with the server to share RSA keys.
 
+            new Thread(new Runnable() { // Connection checking thread
+                @Override
+                public void run() {
+                    while (true) { // ping the server every 3 sec
+                        Timestamp newTime = new Timestamp(System.currentTimeMillis());
+
+                        if (server.getEncodingKey() != null) { // if connection is initialized
+                            if (ping_end != null) {
+                                long ping = Math.abs(ping_end.getTime() - ping_start.getTime()); // calculate ping
+                                System.out.println(ping + "ms");
+                                // get ping event from here!
+
+                                if (ping > 10000) { // if over 10 seconds
+                                    System.err.println("Connection lost or ping too high.");
+                                    // get connection lost event from here!
+
+                                    close();
+                                    break; // exits the loop
+                                }
+                            }
+                            else // Initialize ping
+                                ping_end = newTime;
+
+                            ping_start = newTime;
+                            if (!sendMessage("Ping", null, true)) // send a ping message
+                                break; // Client already closed, disconnect
+                        }
+
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }).start();
         } catch (ConnectException e) {
             this.running = false;
             System.err.println("Server connection refused!");
@@ -60,8 +100,23 @@ public class ClientInterface implements Runnable {
                         if (scope != null)
                             // Do requested action or response
 
-                            switch (scope) {
-                                // If needed to handle any action response
+                            switch (scope) { // If needed to handle any action response
+                                case "Ping": // Check for action success
+                                    if (data != null && ((LinkedTreeMap) data).containsKey("Success") && (boolean)((LinkedTreeMap) data).get("Success"))
+                                        ping_end = new Timestamp(System.currentTimeMillis());
+
+                                    break;
+
+                                case "Shutdown":
+                                    if (data != null) {
+                                        System.err.println((String) data);
+                                        // get shutdown event from here!
+
+                                        System.err.println("Disconnecting client");
+                                        close();
+                                    }
+
+                                    break;
                             }
 
                         //System.err.println(this.server.getEncodingKey());
@@ -94,11 +149,10 @@ public class ClientInterface implements Runnable {
         this.sendMessage("Connection", null, true);
     }
 
-    public void sendMessage(String scope, Object data, boolean encode) {
-        if (!this.running) {
-            System.err.println("Unable to send message, client is closed!");
-            return;
-        }
+    public boolean sendMessage(String scope, Object data, boolean encode) {
+        if (!this.running)
+            return false;
+            //System.err.println("Unable to send message, client is closed!");
 
         // Wait for the sever to share it's RSA key if not present
         if (!Objects.equals(scope, "Connection"))
@@ -113,6 +167,8 @@ public class ClientInterface implements Runnable {
         // Send a new message to the server
         Message msg = new Message(this.server, scope, data, encode);
         out.println(msg.toJson());
+
+        return true;
     }
 
     public void close() {

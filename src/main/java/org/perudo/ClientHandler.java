@@ -1,6 +1,5 @@
 package org.perudo;
 
-import Messaging.DataUnion;
 import Messaging.Message;
 import Messaging.SignatureException;
 import Messaging.User;
@@ -10,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
@@ -44,7 +44,7 @@ public class ClientHandler implements Runnable {
             String inputLine;
 
             // Setup response message
-            LinkedHashMap<String, DataUnion> newData = new LinkedHashMap<>();
+            LinkedHashMap<String, Object> newData = new LinkedHashMap<>();
             Message response = null;
 
             // Checks for a message input
@@ -58,8 +58,10 @@ public class ClientHandler implements Runnable {
 
                     // Set encoding key for RSA encryption if present in the message
                     String encoder = message.getEncodingKey();
-                    if (encoder != null)
+                    if (encoder != null) {
                         this.user.setEncodingKey(encoder);
+                        toEncode = true; // If the message is encoded, reply with an encoded message
+                    }
 
                     // Get required data
                     String scope = message.getScope();
@@ -74,7 +76,14 @@ public class ClientHandler implements Runnable {
                              */
                             case "Connection":
                                 toEncode = true; // Allows the client to get the encoding key
-                                newData.put("Success", new DataUnion(true)); // Build response
+                                newData.put("Success", true); // Build response
+                                break;
+
+                            /*
+                                Ping
+                             */
+                            case "Ping":
+                                newData.put("Success", true);
                                 break;
 
                             /*
@@ -84,8 +93,8 @@ public class ClientHandler implements Runnable {
                              */
                             case "Info":
                                 if (data == null) { // Data is required
-                                    newData.put("Success", new DataUnion(false));
-                                    newData.put("Error", new DataUnion("Missing data"));
+                                    newData.put("Success", false);
+                                    newData.put("Error", "Missing data");
                                     break;
                                 }
 
@@ -104,32 +113,32 @@ public class ClientHandler implements Runnable {
                                 }
 
                                 // Build response
-                                newData.put("Success", new DataUnion(missing.equals("Missing:")));
-                                newData.put("Error", missing.equals("Missing:") ? null : new DataUnion(missing));
+                                newData.put("Success", missing.equals("Missing:"));
+                                newData.put("Error", missing.equals("Missing:") ? null : missing);
                                 break;
 
                             default:
-                                newData.put("Success", new DataUnion(false));
-                                newData.put("Error", new DataUnion("Invalid scope"));
+                                newData.put("Success", false);
+                                newData.put("Error", "Invalid scope");
                         }
                     else {
                         // Build error response
-                        newData.put("Success", new DataUnion(false));
-                        newData.put("Error", new DataUnion("Missing scope"));
+                        newData.put("Success", false);
+                        newData.put("Error", "Missing scope");
                     }
 
                     response = new Message(this.user, scope, newData, toEncode);
                 } catch (SignatureException e) {
                     // Build signature exception response
-                    newData.put("Success", new DataUnion(false));
-                    newData.put("Error", new DataUnion(e.getMessage()));
+                    newData.put("Success", false);
+                    newData.put("Error", e.getMessage());
                 } catch (Exception e) {
                     System.err.println("Error while processing the client message: ");
                     e.printStackTrace();
 
                     // Build general exception response
-                    newData.put("Success", new DataUnion(false));
-                    newData.put("Error", new DataUnion("Server exception!"));
+                    newData.put("Success", false);
+                    newData.put("Error", "Server exception!");
                 }
 
                 if (response == null) // build an exception message
@@ -138,12 +147,16 @@ public class ClientHandler implements Runnable {
                 // send response message
                 out.println(response.toJson());
             }
+        } catch (SocketException e) {
+            // Socket is closing, ignore.
+
         } catch (Exception e) {
             System.err.println("Error while handling the client: ");
             e.printStackTrace();
         }
 
         // Closing the handler due to client disconnection
+        System.out.println("Client disconnected");
 
         // Put disconnection check here!
         // this.user
