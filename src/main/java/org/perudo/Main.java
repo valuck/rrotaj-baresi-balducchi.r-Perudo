@@ -1,11 +1,43 @@
 package org.perudo;
 import Messaging.User;
 import Storage.ServerStorage;
+import UserInterface.CustomConsole;
+import UserInterface.OptionsMenu;
+import org.perudo.ClientHandler;
+import org.perudo.ClientInterface;
+import org.perudo.ServerInterface;
 
+import javax.swing.*;
 import java.util.LinkedHashMap;
+import java.util.function.Function;
 
 public class Main {
     public static void main(String[] args) {
+        CustomConsole console = new CustomConsole("Perudo");
+        OptionsMenu menu = new OptionsMenu();
+        menu.addOption("Alura mat", new Function<String, Void>() {
+
+            @Override
+            public Void apply(String option) {
+                console.println("la cacca");
+
+                return null;
+            }
+        });
+
+        menu.addOption("Sos", new Function<String, Void>() {
+
+            @Override
+            public Void apply(String option) {
+                console.println("è rosa");
+
+                return null;
+            }
+        });
+
+        console.setTextInput(false);
+        console.drawOptionsMenu(menu);
+
         // Server testing
         ServerInterface server = new ServerInterface(3000);
         new Thread(server).start();
