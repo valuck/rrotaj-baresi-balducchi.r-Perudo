@@ -8,6 +8,7 @@ import org.perudo.ClientInterface;
 import org.perudo.ServerInterface;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.LinkedHashMap;
 import java.util.function.Function;
 
@@ -15,6 +16,7 @@ public class Main {
     public static void main(String[] args) {
         CustomConsole console = new CustomConsole("Perudo");
         OptionsMenu menu = new OptionsMenu();
+        console.println("MENU\n------------------------\t!!!");
         menu.addOption("Alura mat", new Function<String, Void>() {
 
             @Override

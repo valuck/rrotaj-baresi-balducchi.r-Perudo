@@ -13,21 +13,26 @@ public class OptionsMenu {
     }
 
     public void addOption(String text, Function<String, Void> function) {
-        this.options.put(text, function);
+        this.options.put(text, function); // add a new option
     }
 
     public void removeOption(String text) {
-        this.options.remove(text);
+        this.options.remove(text); // Remove an option
     }
 
     public void doOption(String text) {
-        if (this.options.containsKey(text))
-            this.options.get(text).apply(text);
+        // Check if the option is available and run its code
+        if (this.options.containsKey(text)) {
+            Function<String, Void> function = this.options.get(text);
+
+            if (function != null)
+                function.apply(text);
+        }
     }
 
     public LinkedList<String> getOptions() {
+        // Generate the list of options
         LinkedList<String> options = new LinkedList<>();
-
         this.options.forEach((key, value) -> {
             options.add(key);
         });
