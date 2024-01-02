@@ -74,24 +74,26 @@ public class ClientHandler implements Runnable {
                             /*
                                 Connection
                              */
-                            case "Connection":
+                            case "Connection": {
                                 toEncode = true; // Allows the client to get the encoding key
                                 newData.put("Success", true); // Build response
                                 break;
+                            }
 
                             /*
                                 Ping
                              */
-                            case "Ping":
+                            case "Ping": {
                                 newData.put("Success", true);
                                 break;
+                            }
 
                             /*
                                 Info:
                                 - Username: String
                                 - LastToken: String
                              */
-                            case "Info":
+                            case "Info": {
                                 if (data == null) { // Data is required
                                     newData.put("Success", false);
                                     newData.put("Error", "Missing data");
@@ -116,10 +118,34 @@ public class ClientHandler implements Runnable {
                                 newData.put("Success", missing.equals("Missing:"));
                                 newData.put("Error", missing.equals("Missing:") ? null : missing);
                                 break;
+                            }
 
-                            default:
+                            /*
+                                NewLobby:
+                                - Size: Int
+                             */
+                            case "NewLobby": {
+                                if (data == null) { // Data is required
+                                    newData.put("Success", false);
+                                    newData.put("Error", "Missing data");
+                                    break;
+                                }
+
+                                if (this.user.getCurrentToken() == null) {
+                                    newData.put("Success", false);
+                                    newData.put("Error", "Missing token");
+                                    break;
+                                }
+
+                                new Game(((Double) data).intValue(), this.user);
+                                newData.put("Success", true);
+                                break;
+                            }
+
+                            default: {
                                 newData.put("Success", false);
                                 newData.put("Error", "Invalid scope");
+                            }
                         }
                     else {
                         // Build error response

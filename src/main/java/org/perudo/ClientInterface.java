@@ -86,7 +86,7 @@ public class ClientInterface implements Runnable {
                 try {
                     String serverResponse = in.readLine();
                     if (serverResponse != null) { // On message received
-                        System.out.println("Server response: " + serverResponse);
+                        //System.out.println("Server response: " + serverResponse);
 
                         // Generate a new message from the received data
                         Message response = new Message(this.server, serverResponse);
@@ -101,13 +101,14 @@ public class ClientInterface implements Runnable {
                             // Do requested action or response
 
                             switch (scope) { // If needed to handle any action response
-                                case "Ping": // Check for action success
-                                    if (data != null && ((LinkedTreeMap) data).containsKey("Success") && (boolean)((LinkedTreeMap) data).get("Success"))
+                                case "Ping": {// Check for action success
+                                    if (data != null && ((LinkedTreeMap) data).containsKey("Success") && (boolean) ((LinkedTreeMap) data).get("Success"))
                                         ping_end = new Timestamp(System.currentTimeMillis());
 
                                     break;
+                                }
 
-                                case "Shutdown":
+                                case "Shutdown": {
                                     if (data != null) {
                                         System.err.println((String) data);
                                         // get shutdown event from here!
@@ -117,6 +118,7 @@ public class ClientInterface implements Runnable {
                                     }
 
                                     break;
+                                }
                             }
 
                         //System.err.println(this.server.getEncodingKey());
