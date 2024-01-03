@@ -71,6 +71,7 @@ public class ClientInterface implements Runnable {
         } catch (ConnectException e) {
             this.running = false;
             System.err.println("Server connection refused!");
+            Main.printRestart("Connection refused!");
 
         } catch (Exception e) {
             this.running = false;
@@ -134,7 +135,7 @@ public class ClientInterface implements Runnable {
 
             System.out.println("Client closed");
         } catch (Exception e) {
-            throw new RuntimeException("Error while listening for the server" + e);
+            throw new RuntimeException(STR."Error while listening for the server\{e}");
         }
     }
 

@@ -1,17 +1,23 @@
 package UserInterface;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
+import java.util.LinkedList;
 
 public class CustomConsole {
     private DefaultListModel<String> prompt;
     private ListSelectionModel selection;
     private JList<String> list;
+    private JFrame body;
+
+    private boolean selectable = false;
+    private String commandBuffer = "";
     private OptionsMenu currentMenu;
+    private int commandBufferId = 0;
+    private int optionsIndex = -1;
     private JTextField input;
 
     private void initialize(String title, Color foreground, Color background, Font font) {
@@ -24,15 +30,16 @@ public class CustomConsole {
         if (font == null)
             font = new Font(Font.MONOSPACED, Font.BOLD, 16);
 
-        JFrame body = new JFrame(); // Initialize GUI
-        this.prompt = new DefaultListModel<String>();
+        this.body = new JFrame(); // Initialize GUI
+        this.prompt = new DefaultListModel<>();
 
-        body.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        body.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        body.setUndecorated(true);
-        body.setTitle(title);
+        this.body.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //this.body.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        this.body.setSize(1024, 512);
+        this.body.setUndecorated(false);
+        this.body.setTitle(title);
 
-        this.list = new JList<String>(this.prompt);
+        this.list = new JList<>(this.prompt);
         this.selection = this.list.getSelectionModel();
         this.list.setBackground(background);
         this.list.setForeground(foreground);
@@ -42,13 +49,13 @@ public class CustomConsole {
         this.list.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                int keyCode = e.getKeyCode();
+            int keyCode = e.getKeyCode();
 
-                if (keyCode == KeyEvent.VK_ENTER) { // do action
-                    String value = list.getSelectedValue();
+            if (keyCode == KeyEvent.VK_ENTER) { // do action
+                String value = list.getSelectedValue();
 
-                    if (value != null && currentMenu != null)
-                        currentMenu.doOption(value);
+                if (value != null && currentMenu != null)
+                    currentMenu.doOption(value);
                 }
             }
         });
@@ -63,6 +70,16 @@ public class CustomConsole {
             @Override
             public void focusLost(FocusEvent e) {
                 list.clearSelection(); // Clear the selection
+            }
+        });
+
+        // Listen for selection changes
+        this.list.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) { // Redirect selection on menu options
+                if (selectable && optionsIndex >= 0 && optionsIndex <= prompt.size() && list.getSelectedIndex() <= optionsIndex) {
+                    list.setSelectedIndex(optionsIndex);
+                }
             }
         });
 
@@ -85,6 +102,8 @@ public class CustomConsole {
                         text = text.substring(1);
 
                     text = text.trim();
+                    commandBuffer = text;
+                    commandBufferId++;
                     println(text);
 
                     if (currentMenu != null)
@@ -96,12 +115,12 @@ public class CustomConsole {
             }
         });
 
-        body.add(this.input, BorderLayout.PAGE_END);
-        body.add(this.list, BorderLayout.CENTER);
+        this.body.add(this.input, BorderLayout.PAGE_END);
+        this.body.add(this.list, BorderLayout.CENTER);
 
         // Set mode and display
         this.setTextInput(true);
-        body.setVisible(true);
+        this.body.setVisible(true);
         this.focusInput();
     }
 
@@ -123,11 +142,41 @@ public class CustomConsole {
 
     public int println(String text) { // Print a new line
         this.prompt.addElement(text);
+
+        SwingUtilities.invokeLater(() -> { // Without this the console sometimes will glitch, #SwingTheBestLibrary
+            DefaultListModel<String> newModel = new DefaultListModel<>();
+            for (int i = 0; i < prompt.size(); i++) {
+                newModel.addElement(prompt.getElementAt(i));
+            }
+
+            list.setModel(newModel);
+        });
+
         return this.prompt.size() -1;
+    }
+
+    public String readln() { // Wait for a new command, Call from a different thread
+        boolean originalState = this.isTextInput();
+        this.setTextInput(true);
+
+        int last = this.commandBufferId;
+        while (this.commandBufferId <= last) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        this.setTextInput(originalState);
+        return this.commandBuffer;
     }
 
     public void clear() { // Clear the console
         this.currentMenu = null;
+        this.optionsIndex = -1;
+
+        this.list.clearSelection();
         this.prompt.removeAllElements();
     }
 
@@ -148,10 +197,11 @@ public class CustomConsole {
 
     public void setSelectable(boolean selectable) {
         // Makes the list selectable or not
+        this.selectable = selectable;
         this.list.setSelectionModel(selectable ? this.selection : new DefaultListSelectionModel() {
             @Override // Removes the selection
             public void setSelectionInterval(int index0, int index1) {
-                super.setSelectionInterval(-1, -1);
+            super.setSelectionInterval(-1, -1);
             }
         });
 
@@ -164,6 +214,10 @@ public class CustomConsole {
         this.setSelectable(!enabled);
 
         focusInput();
+    }
+
+    public boolean isTextInput() {
+        return this.input.isVisible();
     }
 
     public void setBackground(Color background) { // Set background color
@@ -196,8 +250,15 @@ public class CustomConsole {
     public void drawOptionsMenu(OptionsMenu menu) {
         //this.clear();
         this.currentMenu = menu; // Set and draw all options
-        menu.getOptions().forEach((value) -> {
-            this.println(value);
-        });
+        this.optionsIndex = this.prompt.size();
+
+        menu.getOptions().forEach(this::println);
+
+        if (this.selectable)
+            this.list.setSelectedIndex(this.optionsIndex);
+    }
+
+    public void close() {
+        this.body.dispatchEvent(new WindowEvent(this.body, WindowEvent.WINDOW_CLOSING));
     }
 }

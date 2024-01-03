@@ -1,6 +1,7 @@
 package Storage;
 
 import com.mysql.cj.jdbc.exceptions.CommunicationsException;
+import org.perudo.Main;
 
 import java.sql.*;
 import java.util.LinkedList;
@@ -55,7 +56,9 @@ public class ServerStorage {
 
             return true;
         } catch (CommunicationsException e) {
-            System.err.println("Unable to connect the server to the database.");
+            String message = "Unable to connect the server to the database.";
+            System.err.println(message);
+            Main.printMessage(message);
         } catch (Exception e) {
             e.printStackTrace();
         }

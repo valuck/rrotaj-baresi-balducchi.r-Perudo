@@ -26,7 +26,12 @@ public class OptionsMenu {
             Function<String, Void> function = this.options.get(text);
 
             if (function != null)
-                function.apply(text);
+                new Thread(new Runnable() { // Execute in a new thread
+                    @Override
+                    public void run() {
+                        function.apply(text);
+                    }
+                }).start();
         }
     }
 

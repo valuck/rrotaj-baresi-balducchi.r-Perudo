@@ -29,6 +29,7 @@ public class ServerInterface implements Runnable {
     @Override
     public void run() {
         System.out.println("[SERVER]: Online");
+        Main.printMessage("Server online");
 
         try {
             while (running) { // Listen for clients to connect
@@ -37,7 +38,7 @@ public class ServerInterface implements Runnable {
                 if (!running)
                     break; // Exits the loop if shutting down
 
-                System.out.println("[SERVER]: New client connected: " + clientSocket);
+                System.out.println(STR."[SERVER]: New client connected: \{clientSocket}");
 
                 // Create a new thread for each incoming client
                 new Thread(new ClientHandler(clientSocket)).start();
@@ -50,7 +51,7 @@ public class ServerInterface implements Runnable {
                 }
 
             } catch (Exception e) {
-                System.err.println("Error while shutting down the server: " + e);
+                System.err.println(STR."Error while shutting down the server: \{e}");
             }
         } catch (SocketException e) {
             // Socket is closing, ignore.
@@ -65,6 +66,9 @@ public class ServerInterface implements Runnable {
     }
 
     public static void shutdown() {
+        if (!running)
+            return;
+
         // stop listening for clients to connect
         running = false;
 
@@ -87,7 +91,14 @@ public class ServerInterface implements Runnable {
     }
 
     public static void softShutdown() {
-        ClientHandler.replicateMessage("Shutdown", "Shutting down in " + softShutdownTime, true);
+        if (!running)
+            return;
+
+        running = false;
+        String message = STR."Shutting down in \{softShutdownTime}";
+
+        Main.printMessage(message);
+        ClientHandler.replicateMessage("Shutdown", message, true);
 
         try {
             Thread.sleep(softShutdownTime);
