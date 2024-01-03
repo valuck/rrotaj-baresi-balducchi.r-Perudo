@@ -5,11 +5,11 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.LinkedList;
 
 public class CustomConsole {
     private DefaultListModel<String> prompt;
     private ListSelectionModel selection;
+    private JScrollBar scrollable;
     private JList<String> list;
     private JFrame body;
 
@@ -17,7 +17,8 @@ public class CustomConsole {
     private String commandBuffer = "";
     private OptionsMenu currentMenu;
     private int commandBufferId = 0;
-    private int optionsIndex = -1;
+    private int optionsMax = -1;
+    private int optionsMin = -1;
     private JTextField input;
 
     private void initialize(String title, Color foreground, Color background, Font font) {
@@ -41,6 +42,7 @@ public class CustomConsole {
 
         this.list = new JList<>(this.prompt);
         this.selection = this.list.getSelectionModel();
+        this.list.setLayoutOrientation(JList.VERTICAL);
         this.list.setBackground(background);
         this.list.setForeground(foreground);
         this.list.setFont(font);
@@ -77,8 +79,14 @@ public class CustomConsole {
         this.list.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) { // Redirect selection on menu options
-                if (selectable && optionsIndex >= 0 && optionsIndex <= prompt.size() && list.getSelectedIndex() <= optionsIndex) {
-                    list.setSelectedIndex(optionsIndex);
+                if (selectable) {
+                    int index = list.getSelectedIndex();
+                    int size = prompt.size();
+
+                    if (optionsMin >= 0 && optionsMin < size && index < optionsMin)
+                        list.setSelectedIndex(optionsMin);
+                    else if (optionsMax >= 0 && optionsMax < size && index > optionsMax)
+                        list.setSelectedIndex(optionsMax);
                 }
             }
         });
@@ -115,8 +123,13 @@ public class CustomConsole {
             }
         });
 
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        scrollPane.setViewportView(this.list);
+
+        this.scrollable = scrollPane.getVerticalScrollBar();
         this.body.add(this.input, BorderLayout.PAGE_END);
-        this.body.add(this.list, BorderLayout.CENTER);
+        this.body.add(scrollPane, BorderLayout.CENTER);
 
         // Set mode and display
         this.setTextInput(true);
@@ -143,7 +156,7 @@ public class CustomConsole {
     public int println(String text) { // Print a new line
         this.prompt.addElement(text);
 
-        SwingUtilities.invokeLater(() -> { // Without this the console sometimes will glitch, #SwingTheBestLibrary
+        SwingUtilities.invokeLater(() -> { // Without this the console sometimes will glitch, #JavaSwingTheBest
             DefaultListModel<String> newModel = new DefaultListModel<>();
             for (int i = 0; i < prompt.size(); i++) {
                 newModel.addElement(prompt.getElementAt(i));
@@ -152,6 +165,7 @@ public class CustomConsole {
             list.setModel(newModel);
         });
 
+        this.scrollable.setValue(this.scrollable.getMaximum());
         return this.prompt.size() -1;
     }
 
@@ -174,7 +188,8 @@ public class CustomConsole {
 
     public void clear() { // Clear the console
         this.currentMenu = null;
-        this.optionsIndex = -1;
+        this.optionsMin = -1;
+        this.optionsMax = -1;
 
         this.list.clearSelection();
         this.prompt.removeAllElements();
@@ -191,8 +206,11 @@ public class CustomConsole {
             this.input.requestFocus();
             this.input.setCaretPosition(this.input.getDocument().getLength());
         }
-        else
+        else {
             this.list.requestFocus();
+            if (this.selectable && this.optionsMin >= 0)
+                this.list.setSelectedIndex(this.optionsMin);
+        }
     }
 
     public void setSelectable(boolean selectable) {
@@ -250,12 +268,12 @@ public class CustomConsole {
     public void drawOptionsMenu(OptionsMenu menu) {
         //this.clear();
         this.currentMenu = menu; // Set and draw all options
-        this.optionsIndex = this.prompt.size();
+        this.optionsMin = this.prompt.size();
 
         menu.getOptions().forEach(this::println);
+        this.optionsMax = this.prompt.size() -1;
 
-        if (this.selectable)
-            this.list.setSelectedIndex(this.optionsIndex);
+        this.focusInput();
     }
 
     public void close() {

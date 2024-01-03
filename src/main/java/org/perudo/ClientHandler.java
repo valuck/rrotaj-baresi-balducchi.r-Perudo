@@ -93,7 +93,7 @@ public class ClientHandler implements Runnable {
                                 - Username: String
                                 - LastToken: String
                              */
-                            case "Info": {
+                            case "Login": {
                                 if (data == null) { // Data is required
                                     newData.put("Success", false);
                                     newData.put("Error", "Missing data");
@@ -121,6 +121,29 @@ public class ClientHandler implements Runnable {
                             }
 
                             /*
+                                Lobbies:
+                             */
+                            case "Lobbies": {
+                                LinkedList<String> publicLobbies = new LinkedList<>();
+                                LinkedList<String> privateLobbies = new LinkedList<>();
+
+                                LinkedTreeMap<Integer, Game> lobbies = Game.getLobbies();
+                                lobbies.forEach((key, value) -> {
+                                    String host = STR."\{key}. \{value.getHost().getUsername()}'s lobby";
+
+                                    if (value.getPassword() == null)
+                                        publicLobbies.add(host);
+                                    else
+                                        privateLobbies.add(host);
+                                });
+
+                                newData.put("Success", true);
+                                newData.put("Public", publicLobbies);
+                                newData.put("Private", privateLobbies);
+                                break;
+                            }
+
+                            /*
                                 NewLobby:
                                 - Size: Int
                              */
@@ -137,7 +160,7 @@ public class ClientHandler implements Runnable {
                                     break;
                                 }
 
-                                new Game(((Double) data).intValue(), this.user);
+                                new Game(((Double) data).intValue(), this.user, null);
                                 newData.put("Success", true);
                                 break;
                             }

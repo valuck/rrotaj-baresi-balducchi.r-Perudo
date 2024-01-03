@@ -62,6 +62,7 @@ public class ServerInterface implements Runnable {
         }
 
         System.out.println("Server closed");
+        ServerStorage.close();
         serverSocket = null;
     }
 
@@ -94,8 +95,7 @@ public class ServerInterface implements Runnable {
         if (!running)
             return;
 
-        running = false;
-        String message = STR."Shutting down in \{softShutdownTime}";
+        String message = STR."Shutting down in \{softShutdownTime/1000} sec";
 
         Main.printMessage(message);
         ClientHandler.replicateMessage("Shutdown", message, true);

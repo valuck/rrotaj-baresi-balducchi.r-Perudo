@@ -66,6 +66,17 @@ public class ServerStorage {
         return false;
     }
 
+    public static void close() {
+        initCheck();
+
+        try {
+            conn.close();
+            conn = null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static boolean eraseDatabase(boolean recreate) {
         initCheck();
 

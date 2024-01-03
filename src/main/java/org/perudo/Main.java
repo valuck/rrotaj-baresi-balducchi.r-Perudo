@@ -1,8 +1,13 @@
 package org.perudo;
 
+import Messaging.Message;
 import Storage.ClientStorage;
 import UserInterface.CustomConsole;
 import UserInterface.OptionsMenu;
+import com.google.gson.internal.LinkedTreeMap;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.function.Function;
 
 public class Main {
@@ -25,6 +30,20 @@ public class Main {
 
     private static void startServer() {
         console.clear();
+        OptionsMenu menu = new OptionsMenu();
+        menu.addOption("Soft Shutdown", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                ServerInterface.softShutdown();
+                printRestart("Server has been closed");
+
+                return null;
+            }
+        });
+
+        console.drawOptionsMenu(menu);
+        console.println("------------------");
+
         new Thread(new ServerInterface(10)).start();
     }
 
@@ -66,13 +85,38 @@ public class Main {
         }
     }
 
+    private static void connectClient(String address, int port) {
+        currentClient = new ClientInterface(address, port);
+        new Thread(currentClient).start();
+    }
+
+    private static void clientLogin(String username) {
+        // Send login message to the server
+        LinkedTreeMap<String, String> data = new LinkedTreeMap<>();
+        data.put("Username", username);
+        data.put("LastToken", (String) ClientStorage.getSetting("token"));
+
+        currentClient.sendMessage("Login", data, true);
+    }
+
+    private static void lobbyLogin(String lobby, String password) {
+        console.clear();
+        console.println("Joining lobby..");
+
+        LinkedTreeMap<String, String> data = new LinkedTreeMap<>();
+        data.put("Lobby", lobby);
+        data.put("Password", password);
+
+        currentClient.sendMessage("Join", data, true);
+    }
+
     private static void printPort(String address) {
         console.clear();
         console.println("Please enter the port of the server:");
-        Integer old = ((Number) ClientStorage.getSetting("port")).intValue();
+        int old = ((Number) ClientStorage.getSetting("port")).intValue();
 
-        if (old != null && old > 0) {
-            console.println(old.toString());
+        if (old > 0) {
+            console.println(String.valueOf(old));
             console.println("------------------");
 
             OptionsMenu menu = new OptionsMenu();
@@ -100,10 +144,6 @@ public class Main {
             ClientStorage.updateSetting("port", port, true);
             connectClient(address, port);
         }
-    }
-
-    private static void connectClient(String addres, int port) {
-        currentClient = new ClientInterface(addres, port);
     }
 
     private static void printInitialize() {
@@ -158,7 +198,15 @@ public class Main {
         console.println(message);
     }
 
+    public static void printSoloMessage(String message) {
+        console.clear();
+        console.println(message);
+    }
+
     public static void printRestart(String message) {
+        if (currentClient != null)
+            currentClient.close();
+
         console.clear();
         console.println(message);
         console.println("------------------");
@@ -170,6 +218,78 @@ public class Main {
                 printInitialize();
                 return null;
             }
+        });
+
+        console.drawOptionsMenu(menu);
+    }
+
+    public static void printLogin() {
+        console.clear();
+        console.println("Please enter the username you would like to use:");
+        String old = (String) ClientStorage.getSetting("username");
+
+        if (old != null && !old.isEmpty()) {
+            console.println(old);
+            console.println("------------------");
+
+            OptionsMenu menu = new OptionsMenu();
+            menu.addOption("Continue", new Function<String, Void>() {
+                @Override
+                public Void apply(String string) {
+                    clientLogin(old);
+                    return null;
+                }
+            });
+
+            menu.addOption("Change", new Function<String, Void>() {
+                @Override
+                public Void apply(String string) {
+                    ClientStorage.updateSetting("username", "", true);
+                    printLogin(); // Restart
+
+                    return null;
+                }
+            });
+
+            console.drawOptionsMenu(menu);
+        } else {
+            String username = console.readln();
+            ClientStorage.updateSetting("username", username, true);
+            clientLogin(username);
+        }
+    }
+
+    public static void printLobbies(ArrayList<String> publicLobbies, ArrayList<String> privateLobbies) {
+        console.clear();
+        console.println("Public Lobbies");
+        console.println("------------------");
+
+        OptionsMenu menu = new OptionsMenu();
+        publicLobbies.forEach((value) -> {
+            menu.addOption(value, new Function<String, Void>() {
+                @Override
+                public Void apply(String string) {
+                    lobbyLogin(string, null);
+                    return null;
+                }
+            });
+        });
+
+        menu.addOption(" ", null);
+        menu.addOption("Private lobbies", null);
+        menu.addOption("------------------", null);
+
+        privateLobbies.forEach((value) -> {
+            menu.addOption(value, new Function<String, Void>() {
+                @Override
+                public Void apply(String string) {
+                    console.clear();
+                    console.println("Please enter the lobby's password");
+                    lobbyLogin(string, console.readln());
+
+                    return null;
+                }
+            });
         });
 
         console.drawOptionsMenu(menu);

@@ -11,6 +11,8 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Objects;
 
 public class ClientInterface implements Runnable {
@@ -79,6 +81,10 @@ public class ClientInterface implements Runnable {
         }
     }
 
+    public boolean isSuccess(Object data) {
+        return data != null && ((LinkedTreeMap) data).containsKey("Success") && (boolean) ((LinkedTreeMap) data).get("Success");
+    }
+
     @Override
     public void run() {
         try {
@@ -87,7 +93,7 @@ public class ClientInterface implements Runnable {
                 try {
                     String serverResponse = in.readLine();
                     if (serverResponse != null) { // On message received
-                        //System.out.println("Server response: " + serverResponse);
+                        System.out.println(STR."Server response: \{serverResponse}");
 
                         // Generate a new message from the received data
                         Message response = new Message(this.server, serverResponse);
@@ -102,9 +108,41 @@ public class ClientInterface implements Runnable {
                             // Do requested action or response
 
                             switch (scope) { // If needed to handle any action response
+                                case "Connection": {
+                                    if (isSuccess(data))
+                                        Main.printLogin();
+                                    else
+                                        Main.printRestart("Error while pairing with the server");
+
+                                    break;
+                                }
+
+                                case "Login": {
+                                    if (isSuccess(data)){
+                                        Main.printSoloMessage("Logged in, loading..");
+                                        this.sendMessage("Lobbies", null, true);
+                                    } else
+                                        Main.printRestart("Failed to log in");
+
+                                    break;
+                                }
+
                                 case "Ping": {// Check for action success
-                                    if (data != null && ((LinkedTreeMap) data).containsKey("Success") && (boolean) ((LinkedTreeMap) data).get("Success"))
+                                    if (isSuccess(data))
                                         ping_end = new Timestamp(System.currentTimeMillis());
+
+                                    break;
+                                }
+
+                                case "Lobbies": {
+                                    if (isSuccess(data)) {
+                                        if (((LinkedTreeMap) data).containsKey("Public") && ((LinkedTreeMap) data).containsKey("Private"))
+                                            Main.printLobbies((ArrayList) ((LinkedTreeMap) data).get("Public"), (ArrayList) ((LinkedTreeMap) data).get("Private"));
+                                        else
+                                            Main.printRestart("Error while loading lobbies");
+                                    }
+                                    else
+                                        Main.printRestart("Unable to load lobbies");
 
                                     break;
                                 }
@@ -175,6 +213,9 @@ public class ClientInterface implements Runnable {
     }
 
     public void close() {
+        if (!this.running)
+            return;
+
         // Stop listening for the server
         this.running = false;
 
