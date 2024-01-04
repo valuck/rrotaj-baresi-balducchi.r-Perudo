@@ -146,6 +146,88 @@ public class Main {
         }
     }
 
+    private static void createLobby(int size, String password) {
+        console.clear();
+        console.println("Creating lobby..");
+
+        LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+        data.put("Password", password);
+        data.put("Size", size);
+
+        currentClient.sendMessage("NewLobby", data, true);
+    }
+
+    private static void hostLobby(boolean isPrivate) {
+        console.clear();
+        String pass = null;
+
+        if (isPrivate) {
+            console.println("Create a password for the lobby");
+            pass = console.readln();
+            console.clear();
+        }
+
+        console.println("Choose the lobby size");
+        OptionsMenu menu = new OptionsMenu();
+
+        String finalPass = pass;
+        menu.addOption("2", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                createLobby(2, finalPass);
+
+                return null;
+            }
+        });
+
+        menu.addOption("4", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                createLobby(4, finalPass);
+
+                return null;
+            }
+        });
+
+        menu.addOption("6", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                createLobby(6, finalPass);
+
+                return null;
+            }
+        });
+
+        console.drawOptionsMenu(menu);
+    }
+
+    private static void printHostLobby() {
+        console.clear();
+        console.println("Lobby creation");
+        console.println("------------------");
+
+        OptionsMenu menu = new OptionsMenu();
+        menu.addOption("Make public", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                hostLobby(false);
+
+                return null;
+            }
+        });
+
+        menu.addOption("Make private", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                hostLobby(true);
+
+                return null;
+            }
+        });
+
+        console.drawOptionsMenu(menu);
+    }
+
     private static void printInitialize() {
         console.clear();
         console.println("Welcome to Perudo.");
@@ -262,7 +344,7 @@ public class Main {
     public static void printLobbies(ArrayList<String> publicLobbies, ArrayList<String> privateLobbies) {
         console.clear();
         console.println("Public Lobbies");
-        console.println("------------------");
+        console.println("-----------------<");
 
         OptionsMenu menu = new OptionsMenu();
         publicLobbies.forEach((value) -> {
@@ -277,7 +359,7 @@ public class Main {
 
         menu.addOption(" ", null);
         menu.addOption("Private lobbies", null);
-        menu.addOption("------------------", null);
+        menu.addOption("-----------------<", null);
 
         privateLobbies.forEach((value) -> {
             menu.addOption(value, new Function<String, Void>() {
@@ -290,6 +372,36 @@ public class Main {
                     return null;
                 }
             });
+        });
+
+        menu.addOption("----------------->", null);
+        menu.addOption("Host", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                printHostLobby();
+
+                return null;
+            }
+        });
+
+        menu.addOption("Refresh", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                console.clear();
+                console.println("Refreshing..");
+                currentClient.sendMessage("Lobbies", null, true);
+
+                return null;
+            }
+        });
+
+        menu.addOption("Disconnect", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                printRestart("Disconnected");
+
+                return null;
+            }
         });
 
         console.drawOptionsMenu(menu);
