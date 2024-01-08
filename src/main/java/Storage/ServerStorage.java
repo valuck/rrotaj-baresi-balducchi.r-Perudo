@@ -33,6 +33,8 @@ public class ServerStorage {
             // Creates the 'lobby' table if it doesn't already exist
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS lobbies " +
                     "(lobby_id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "lobby_name VARCHAR(255) NOT NULL, " +
+                    "lobby_password VARCHAR(255) NOT NULL, " +
                     "lobby_size INT NOT NULL DEFAULT 2 CHECK (lobby_size >= 2 AND lobby_size <= 6), " +
                     "shift_index INT NOT NULL DEFAULT 1 CHECK (shift_index > 0 AND shift_index <= lobby_size), " +
                     "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
@@ -67,7 +69,8 @@ public class ServerStorage {
     }
 
     public static void close() {
-        initCheck();
+        if (conn == null)
+            return;
 
         try {
             conn.close();
@@ -85,7 +88,9 @@ public class ServerStorage {
             PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             newState.executeUpdate();
             newState.close();
-            conn.close();
+
+            if (conn != null)
+                conn.close();
             conn = null;
 
             if (recreate) { // Create a new the database if required
@@ -104,7 +109,7 @@ public class ServerStorage {
     public static boolean updateTable(String tableName, String keyName, int recordId) {
         try {
             // Update the last time a record of a table has been edited
-            String query = "UPDATE " + tableName + " SET updated_at = ? WHERE " + keyName + " = ?";
+            String query = STR."UPDATE \{tableName} SET updated_at = ? WHERE \{keyName} = ?";
             PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             newState.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
             newState.setInt(2, recordId);
@@ -126,7 +131,7 @@ public class ServerStorage {
 
         try {
             // Get all the active lobby ids
-            String query = "SELECT lobby_id, updated_at AS 'id', 'date' FROM lobbies";
+            String query = "SELECT lobby_id AS 'id', updated_at AS 'date' FROM lobbies";
             PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet resultSet = newState.executeQuery();
 
@@ -153,15 +158,17 @@ public class ServerStorage {
         return ids;
     }
 
-    public static int newLobby(int lobbySize) {
+    public static int newLobby(String name, int lobbySize, String password) {
         initCheck();
         int result = -1;
 
         try {
             // Create a new lobby of specified size
-            String query = "INSERT INTO lobbies (lobby_size) VALUES (?)";
+            String query = "INSERT INTO lobbies (lobby_name, lobby_size, lobby_password) VALUES (?, ?, ?)";
             PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            newState.setInt(1, lobbySize);
+            newState.setString(1, name);
+            newState.setInt(2, lobbySize);
+            newState.setString(3, password == null ? "" : password);
 
             if (newState.executeUpdate() > 0) {
                 ResultSet generatedKeys = newState.getGeneratedKeys();
@@ -178,6 +185,78 @@ public class ServerStorage {
         }
 
         return result;
+    }
+
+    public static int getLobbySize(int lobbyId) {
+        initCheck();
+        int size = 0;
+
+        try {
+            // get the shift that determinate the player that has to play the round
+            String query = "SELECT lobby_size AS 'size' FROM lobbies WHERE lobby_id = ?";
+            PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            newState.setInt(1, lobbyId); // of the specified lobby
+            ResultSet resultSet = newState.executeQuery();
+
+            if (resultSet.next()) { // get the shift as index
+                size = resultSet.getInt("size");
+            }
+
+            newState.close();
+        } catch (Exception e) {
+            System.err.println("Error while getting the lobby size from the database:");
+            e.printStackTrace();
+        }
+
+        return size;
+    }
+
+    public static String getLobbyName(int lobbyId) {
+        initCheck();
+        String name = null;
+
+        try {
+            // get the shift that determinate the player that has to play the round
+            String query = "SELECT lobby_name AS 'name' FROM lobbies WHERE lobby_id = ?";
+            PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            newState.setInt(1, lobbyId); // of the specified lobby
+            ResultSet resultSet = newState.executeQuery();
+
+            if (resultSet.next()) { // get the shift as index
+                name = resultSet.getString("name");
+            }
+
+            newState.close();
+        } catch (Exception e) {
+            System.err.println("Error while getting the lobby name from the database:");
+            e.printStackTrace();
+        }
+
+        return name;
+    }
+
+    public static String getLobbyPassword(int lobbyId) {
+        initCheck();
+        String password = null;
+
+        try {
+            // get the shift that determinate the player that has to play the round
+            String query = "SELECT lobby_password AS 'password' FROM lobbies WHERE lobby_id = ?";
+            PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            newState.setInt(1, lobbyId); // of the specified lobby
+            ResultSet resultSet = newState.executeQuery();
+
+            if (resultSet.next()) { // get the shift as index
+                password = resultSet.getString("password");
+            }
+
+            newState.close();
+        } catch (Exception e) {
+            System.err.println("Error while getting the lobby password from the database:");
+            e.printStackTrace();
+        }
+
+        return password;
     }
 
     public static boolean incrementLobbyShift(int lobbyId) {
@@ -207,11 +286,11 @@ public class ServerStorage {
                 return results > 0;
 
             } catch (Exception e2) {
-                System.err.println("Error resetting shift index in lobby " + lobbyId);
+                System.err.println(STR."Error resetting shift index in lobby \{lobbyId}");
                 e2.printStackTrace();
             }
         } catch (Exception e) {
-            System.err.println("Error shifting index in lobby " + lobbyId);
+            System.err.println(STR."Error shifting index in lobby \{lobbyId}");
             e.printStackTrace();
         }
 
@@ -256,7 +335,7 @@ public class ServerStorage {
 
             return results > 0;
         } catch (Exception e) {
-            System.err.println("Error while deleting the lobby " + lobbyId + " from the database:");
+            System.err.println(STR."Error while deleting the lobby \{lobbyId} from the database:");
             e.printStackTrace();
         }
 
@@ -320,7 +399,7 @@ public class ServerStorage {
 
         try {
             // get the tokens in a specified lobby
-            String query = "SELECT token_value AS 'token' FROM tokens WHERE lobby_id = ?";
+            String query = "SELECT token_value AS 'token' FROM tokens WHERE lobby_id = ? ORDER BY join_order";
             PreparedStatement newState = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             newState.setInt(1, lobbyId); // in the specified lobby
             ResultSet resultSet = newState.executeQuery();
@@ -352,7 +431,7 @@ public class ServerStorage {
 
             return results > 0;
         } catch (Exception e) {
-            System.err.println("Error while deleting the token " + token + " from the database:");
+            System.err.println(STR."Error while deleting the token \{token} from the database:");
             e.printStackTrace();
         }
 
@@ -376,7 +455,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the dice count from token " + token);
+            System.err.println(STR."Error while getting the dice count from token \{token}");
             e.printStackTrace();
         }
 
@@ -420,14 +499,14 @@ public class ServerStorage {
                 }
 
                 newState.close();
-                System.err.println("The dice value of token: " + token + " has been reset to its minimum value due to an excessive decrement of its value");
+                System.err.println(STR."The dice value of token: \{token} has been reset to its minimum value due to an excessive decrement of its value");
                 return result;
             } catch (Exception e2) {
-                System.err.println("Error resetting dice value in token " + token);
+                System.err.println(STR."Error resetting dice value in token \{token}");
                 e2.printStackTrace();
             }
         } catch (Exception e) {
-            System.err.println("Error updating dice value in token " + token);
+            System.err.println(STR."Error updating dice value in token \{token}");
             e.printStackTrace();
         }
 

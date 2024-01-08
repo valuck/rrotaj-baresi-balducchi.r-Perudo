@@ -13,6 +13,8 @@ import java.net.SocketException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
+import static java.lang.StringTemplate.STR;
+
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final User user = new User();
@@ -51,7 +53,7 @@ public class ClientHandler implements Runnable {
             while ((inputLine = in.readLine()) != null) {
                 try {
                     // Get the received message
-                    System.out.println("Received from client: " + inputLine);
+                    System.out.println(STR."Received from client: \{inputLine}");
 
                     boolean toEncode = false;
                     Message message = new Message(this.user, inputLine);
@@ -70,6 +72,7 @@ public class ClientHandler implements Runnable {
                     if (scope != null)
 
                         // Process the requested action
+                    {
                         switch (scope) {
                             /*
                                 Connection
@@ -107,7 +110,7 @@ public class ClientHandler implements Runnable {
                                 if (info.containsKey("Username")) // Set the username or set error
                                     this.user.setUsername(info.get("Username"));
                                 else
-                                    missing = missing + " Username: String";
+                                    missing = STR."\{missing} Username: String";
 
                                 if (info.containsKey("LastToken")) { // Allow to log back in a lobby if disconnected
                                     this.user.setCurrentToken(info.get("LastToken"));
@@ -124,17 +127,19 @@ public class ClientHandler implements Runnable {
                                 Lobbies:
                              */
                             case "Lobbies": {
-                                LinkedList<String> publicLobbies = new LinkedList<>();
-                                LinkedList<String> privateLobbies = new LinkedList<>();
+                                this.user.disconnectFromLobby();
+
+                                LinkedTreeMap<String, String> publicLobbies = new LinkedTreeMap<>();
+                                LinkedTreeMap<String, String> privateLobbies = new LinkedTreeMap<>();
 
                                 LinkedTreeMap<Integer, Game> lobbies = Game.getLobbies();
                                 lobbies.forEach((key, value) -> {
-                                    String host = STR."\{key}. \{value.getHost().getUsername()}'s lobby";
+                                    String name = STR."\{value.getName()} (\{value.getPlayers().size()}/\{value.getSize()})";
 
-                                    if (value.getPassword() == null)
-                                        publicLobbies.add(host);
+                                    if (value.hasPassword())
+                                        privateLobbies.put(key.toString(), name);
                                     else
-                                        privateLobbies.add(host);
+                                        publicLobbies.put(key.toString(), name);
                                 });
 
                                 newData.put("Success", true);
@@ -144,24 +149,71 @@ public class ClientHandler implements Runnable {
                             }
 
                             /*
-                                NewLobby:
+                                Create:
                                 - Size: Int
                              */
-                            case "NewLobby": {
-                                if (data == null) { // Data is required
+                            case "Create": {
+                                if (this.user.getUsername() == null) {
+                                    newData.put("Success", false);
+                                    newData.put("Error", "Not logged in");
+                                    break;
+                                }
+
+                                if (data == null || !((LinkedTreeMap) data).containsKey("Size")) { // Data is required
                                     newData.put("Success", false);
                                     newData.put("Error", "Missing data");
                                     break;
                                 }
 
-                                if (this.user.getCurrentToken() == null) {
+                                String password = null;
+                                if (((LinkedTreeMap) data).containsKey("Password"))
+                                    password = (String) ((LinkedTreeMap) data).get("Password");
+
+                                Game newLobby = new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), this.user, password);
+
+                                newData.put("Success", true);
+                                membersUpdated(newLobby);
+                                break;
+                            }
+
+                            case "Join": {
+                                if (this.user.getUsername() == null) {
                                     newData.put("Success", false);
-                                    newData.put("Error", "Missing token");
+                                    newData.put("Error", "Not logged in");
                                     break;
                                 }
 
-                                new Game(((Double) data).intValue(), this.user, null);
-                                newData.put("Success", true);
+                                if (data == null || !((LinkedTreeMap) data).containsKey("Lobby")) { // Data is required
+                                    newData.put("Success", false);
+                                    newData.put("Error", "Missing data");
+                                    break;
+                                }
+
+                                Game lobby = Game.getByLobbyId(Integer.parseInt((String) ((LinkedTreeMap) data).get("Lobby")));
+                                if (lobby != null) {
+                                    for (User player : lobby.getPlayers()) {// Check if another player is using the same name
+                                        if (player.getUsername().equals(this.user.getUsername())) {
+                                            newData.put("Success", false);
+                                            newData.put("Error", "Username already in use in this lobby");
+                                            break;
+                                        }
+                                    }
+
+                                    String token = lobby.join(this.user, (String) ((LinkedTreeMap) data).get("Password"));
+
+                                    if (token == null) {
+                                        newData.put("Success", false);
+                                        newData.put("Error", "Not authorized to join");
+                                    } else {
+                                        newData.put("Success", true);
+                                        newData.put("Token", token);
+                                        membersUpdated(lobby); // Update member list on other clients
+                                    }
+                                } else {
+                                    newData.put("Success", false);
+                                    newData.put("Error", "Lobby not found");
+                                }
+
                                 break;
                             }
 
@@ -170,7 +222,7 @@ public class ClientHandler implements Runnable {
                                 newData.put("Error", "Invalid scope");
                             }
                         }
-                    else {
+                    } else {
                         // Build error response
                         newData.put("Success", false);
                         newData.put("Error", "Missing scope");
@@ -208,10 +260,33 @@ public class ClientHandler implements Runnable {
         System.out.println("Client disconnected");
 
         // Put disconnection check here!
-        // this.user
+        Game lobby = this.user.getLobby();
+        if (lobby != null) // Remove the player from the lobby if he was playing
+            lobby.disconnect(this.user);
 
         this.close();
         System.out.println("Client handler closed");
+    }
+
+    private void membersUpdated(Game lobby) {
+        // Replicate to all lobby members
+        new Thread(new Runnable() {
+            @Override
+            public void run() { // Update player list
+                LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+                LinkedList<String> players = new LinkedList<>();
+                lobby.getPlayers().forEach((value) -> {
+                    players.add(value.getUsername());
+                });
+
+                replicatedData.put("Success", true);
+                replicatedData.put("Players", players);
+                replicatedData.put("Name", lobby.getName());
+                replicatedData.put("Host", lobby.getHost().getUsername());
+
+                lobby.replicateMessage("Members", replicatedData, true);
+            }
+        }).start();
     }
 
     public User getUser() {

@@ -2,6 +2,7 @@ package org.perudo;
 
 import Messaging.Message;
 import Messaging.User;
+import Storage.ClientStorage;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.io.BufferedReader;
@@ -12,7 +13,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Objects;
 
 public class ClientInterface implements Runnable {
@@ -137,12 +137,39 @@ public class ClientInterface implements Runnable {
                                 case "Lobbies": {
                                     if (isSuccess(data)) {
                                         if (((LinkedTreeMap) data).containsKey("Public") && ((LinkedTreeMap) data).containsKey("Private"))
-                                            Main.printLobbies((ArrayList) ((LinkedTreeMap) data).get("Public"), (ArrayList) ((LinkedTreeMap) data).get("Private"));
+                                            Main.printLobbies((LinkedTreeMap) ((LinkedTreeMap) data).get("Public"), (LinkedTreeMap) ((LinkedTreeMap) data).get("Private"));
                                         else
                                             Main.printRestart("Error while loading lobbies");
                                     }
                                     else
                                         Main.printRestart("Unable to load lobbies");
+
+                                    break;
+                                }
+
+                                // case "Create":
+                                case "Members": {
+                                    if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Name") && ((LinkedTreeMap) data).containsKey("Players") && ((LinkedTreeMap) data).containsKey("Host"))
+                                        Main.printLobbyRoom((String) ((LinkedTreeMap) data).get("Name"), (ArrayList) ((LinkedTreeMap) data).get("Players"), (String) ((LinkedTreeMap) data).get("Host"));
+                                    else {
+                                        Main.printSoloMessage("Failed to load the lobby, loading lobbies list..");
+                                        Thread.sleep(2000);
+
+                                        this.sendMessage("Lobbies", null, true);
+                                    }
+
+                                    break;
+                                }
+
+                                case "Join": {
+                                    if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Token")) // Save the new token to access the new lobby
+                                        ClientStorage.updateSetting("token", (String) ((LinkedTreeMap) data).get("Token"), true);
+                                    else {
+                                        Main.printSoloMessage("Unable to join the lobby, loading lobbies list..");
+                                        Thread.sleep(2000);
+
+                                        this.sendMessage("Lobbies", null, true);
+                                    }
 
                                     break;
                                 }

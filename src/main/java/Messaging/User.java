@@ -2,6 +2,7 @@ package Messaging;
 
 import Storage.ServerStorage;
 import org.perudo.ClientHandler;
+import org.perudo.Game;
 
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -16,7 +17,8 @@ public class User {
     private ClientHandler handler;
     private String currentToken;
     private String username;
-    private int lobbyId = -1;
+    private Game lobby;
+    private int dice;
 
     public User() {
         users.add(this);
@@ -106,16 +108,29 @@ public class User {
         return this.handler;
     }
 
-    public void setLobbyId(int lobbyId) {
-        this.lobbyId = lobbyId;
+    public void setLobby(Game lobby) {
+        this.lobby = lobby;
     }
 
-    public int getLobbyId() {
-        return this.lobbyId;
+    public Game getLobby() {
+        return this.lobby;
+    }
+
+    public void setDice(int dice) {
+        this.dice = dice;
+    }
+
+    public int getDice() {
+        return dice;
+    }
+
+    public void disconnectFromLobby() {
+        if (this.lobby != null)
+            this.lobby.disconnect(this);
     }
 
     private LinkedList<Integer> shuffle() {
-        if (this.lobbyId < 0 || this.currentToken == null)
+        if (this.lobby.getId() < 0 || this.currentToken == null)
             return null;
 
         int dice = ServerStorage.getDice(this.currentToken);

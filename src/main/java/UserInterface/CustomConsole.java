@@ -37,6 +37,7 @@ public class CustomConsole {
         this.body.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //this.body.setExtendedState(JFrame.MAXIMIZED_BOTH);
         this.body.setSize(1024, 512);
+        this.body.setLayout(new BorderLayout());
         this.body.setUndecorated(false);
         this.body.setTitle(title);
 
@@ -201,6 +202,9 @@ public class CustomConsole {
     }
 
     public void focusInput() {
+        this.body.revalidate(); // Fixes weird object positioning by BorderLayout
+        this.body.repaint();
+
         // Focus on the used object
         if (this.input.isVisible()) {
             this.input.requestFocus();

@@ -31,6 +31,9 @@ public class ServerInterface implements Runnable {
         System.out.println("[SERVER]: Online");
         Main.printMessage("Server online");
 
+        if (running) // can start on false
+            Game.reloadGames();
+
         try {
             while (running) { // Listen for clients to connect
                 Socket clientSocket = serverSocket.accept(); // it yields until a new client is connected
@@ -47,7 +50,6 @@ public class ServerInterface implements Runnable {
             try {
                 if (serverSocket != null) {
                     serverSocket.close(); // close the ServerSocket to interrupt accept()
-                    System.out.println("[SERVER]: Closed");
                 }
 
             } catch (Exception e) {
@@ -61,9 +63,16 @@ public class ServerInterface implements Runnable {
             e.printStackTrace();
         }
 
-        System.out.println("Server closed");
+        // Save games
+        Game.getLobbies().forEach((key, value) -> {
+            ServerStorage.updateTable("lobbies", "lobby_id", key); // Update last edit time
+        });
+
         ServerStorage.close();
         serverSocket = null;
+
+        System.out.println("[SERVER]: Offline");
+        Main.printRestart("Server closed");
     }
 
     public static void shutdown() {

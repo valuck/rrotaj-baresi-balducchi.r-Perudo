@@ -1,13 +1,12 @@
 package org.perudo;
 
-import Messaging.Message;
 import Storage.ClientStorage;
+import Storage.ServerStorage;
 import UserInterface.CustomConsole;
 import UserInterface.OptionsMenu;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.function.Function;
 
 public class Main {
@@ -25,26 +24,11 @@ public class Main {
         ClientInterface client = new ClientInterface("localhost", 3000);
         new Thread(client).start();
 
-        client.sendMessage("NewLobby", 4, true);*/
+        client.sendMessage("Create", 4, true);*/
     }
 
     private static void startServer() {
-        console.clear();
-        OptionsMenu menu = new OptionsMenu();
-        menu.addOption("Soft Shutdown", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                ServerInterface.softShutdown();
-                printRestart("Server has been closed");
-
-                return null;
-            }
-        });
-
-        console.drawOptionsMenu(menu);
-        console.println("------------------");
-
-        new Thread(new ServerInterface(10)).start();
+        printPort(null, true);
     }
 
     private static void starClient() {
@@ -62,7 +46,7 @@ public class Main {
             menu.addOption("Continue", new Function<String, Void>() {
                 @Override
                 public Void apply(String string) {
-                    printPort(old);
+                    printPort(old, false);
                     return null;
                 }
             });
@@ -81,8 +65,36 @@ public class Main {
         } else {
             String address = console.readln();
             ClientStorage.updateSetting("address", address, true);
-            printPort(address);
+            printPort(address, false);
         }
+    }
+
+    private static void connectServer(int port) {
+        console.clear();
+        OptionsMenu menu = new OptionsMenu();
+        menu.addOption("Soft Shutdown", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                ServerInterface.softShutdown();
+                printRestart("Server has been closed");
+
+                return null;
+            }
+        });
+
+        menu.addOption("Erase Database and Soft Shutdown", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                ServerStorage.eraseDatabase(true);
+                ServerInterface.softShutdown();
+                return null;
+            }
+        });
+
+        console.drawOptionsMenu(menu);
+        console.println("------------------");
+
+        new Thread(new ServerInterface(port)).start();
     }
 
     private static void connectClient(String address, int port) {
@@ -99,6 +111,17 @@ public class Main {
         currentClient.sendMessage("Login", data, true);
     }
 
+    private static void createLobby(int size, String password) {
+        console.clear();
+        console.println("Creating lobby..");
+
+        LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+        data.put("Password", password);
+        data.put("Size", size);
+
+        currentClient.sendMessage("Create", data, true);
+    }
+
     private static void lobbyLogin(String lobby, String password) {
         console.clear();
         console.println("Joining lobby..");
@@ -110,20 +133,30 @@ public class Main {
         currentClient.sendMessage("Join", data, true);
     }
 
-    private static void printPort(String address) {
+    private static void printPort(String address, boolean isServerPort) {
         console.clear();
         console.println("Please enter the port of the server:");
-        int old = ((Number) ClientStorage.getSetting("port")).intValue();
+
+        Number saved = (Number) ClientStorage.getSetting("port");
+        int old = 0;
+
+        if (saved != null)
+            old = saved.intValue();
 
         if (old > 0) {
             console.println(String.valueOf(old));
             console.println("------------------");
 
             OptionsMenu menu = new OptionsMenu();
+            int finalOld = old;
+
             menu.addOption("Continue", new Function<String, Void>() {
                 @Override
                 public Void apply(String string) {
-                    connectClient(address, old);
+                    if (isServerPort)
+                        connectServer(finalOld);
+                    else
+                        connectClient(address, finalOld);
                     return null;
                 }
             });
@@ -132,7 +165,7 @@ public class Main {
                 @Override
                 public Void apply(String string) {
                     ClientStorage.updateSetting("port", 0, true);
-                    printPort(address); // Restart
+                    printPort(address, isServerPort); // Restart
 
                     return null;
                 }
@@ -144,17 +177,6 @@ public class Main {
             ClientStorage.updateSetting("port", port, true);
             connectClient(address, port);
         }
-    }
-
-    private static void createLobby(int size, String password) {
-        console.clear();
-        console.println("Creating lobby..");
-
-        LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
-        data.put("Password", password);
-        data.put("Size", size);
-
-        currentClient.sendMessage("NewLobby", data, true);
     }
 
     private static void hostLobby(boolean isPrivate) {
@@ -250,10 +272,10 @@ public class Main {
             }
         });
 
-        menu.addOption("Start both", new Function<String, Void>() {
+        menu.addOption("Start both (Testing mode)", new Function<String, Void>() {
             @Override
             public Void apply(String string) {
-                startServer();
+                connectServer(10);
                 starClient();
                 return null;
             }
@@ -341,17 +363,17 @@ public class Main {
         }
     }
 
-    public static void printLobbies(ArrayList<String> publicLobbies, ArrayList<String> privateLobbies) {
+    public static void printLobbies(LinkedTreeMap<String, String> publicLobbies, LinkedTreeMap<String, String> privateLobbies) {
         console.clear();
         console.println("Public Lobbies");
         console.println("-----------------<");
 
         OptionsMenu menu = new OptionsMenu();
-        publicLobbies.forEach((value) -> {
+        publicLobbies.forEach((key, value) -> {
             menu.addOption(value, new Function<String, Void>() {
                 @Override
                 public Void apply(String string) {
-                    lobbyLogin(string, null);
+                    lobbyLogin(key, null);
                     return null;
                 }
             });
@@ -361,18 +383,21 @@ public class Main {
         menu.addOption("Private lobbies", null);
         menu.addOption("-----------------<", null);
 
-        privateLobbies.forEach((value) -> {
+        privateLobbies.forEach((key, value) -> {
             menu.addOption(value, new Function<String, Void>() {
                 @Override
                 public Void apply(String string) {
                     console.clear();
                     console.println("Please enter the lobby's password");
-                    lobbyLogin(string, console.readln());
+                    lobbyLogin(key, console.readln());
 
                     return null;
                 }
             });
         });
+
+        if (privateLobbies.isEmpty())
+            menu.addOption(" ", null);
 
         menu.addOption("----------------->", null);
         menu.addOption("Host", new Function<String, Void>() {
@@ -399,6 +424,29 @@ public class Main {
             @Override
             public Void apply(String string) {
                 printRestart("Disconnected");
+
+                return null;
+            }
+        });
+
+        console.drawOptionsMenu(menu);
+    }
+
+    public static void printLobbyRoom(String name, ArrayList<String> players, String host) {
+        console.clear();
+        console.println(name);
+
+        if (players != null)
+            players.forEach((value) -> {
+                console.println(value);
+            });
+
+        console.println("------------------");
+        OptionsMenu menu = new OptionsMenu();
+        menu.addOption("Leave lobby", new Function<String, Void>() {
+            @Override
+            public Void apply(String s) {
+                currentClient.sendMessage("Lobbies", null, true);
 
                 return null;
             }
