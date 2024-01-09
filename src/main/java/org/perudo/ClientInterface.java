@@ -149,8 +149,8 @@ public class ClientInterface implements Runnable {
 
                                 // case "Create":
                                 case "Members": {
-                                    if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Name") && ((LinkedTreeMap) data).containsKey("Players") && ((LinkedTreeMap) data).containsKey("Host"))
-                                        Main.printLobbyRoom((String) ((LinkedTreeMap) data).get("Name"), (ArrayList) ((LinkedTreeMap) data).get("Players"), (String) ((LinkedTreeMap) data).get("Host"));
+                                    if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Name") && ((LinkedTreeMap) data).containsKey("Players") && ((LinkedTreeMap) data).containsKey("Host") && ((LinkedTreeMap) data).containsKey("Size"))
+                                        Main.printLobbyRoom((String) ((LinkedTreeMap) data).get("Name"), (ArrayList) ((LinkedTreeMap) data).get("Players"), (String) ((LinkedTreeMap) data).get("Host"), (Number) ((LinkedTreeMap) data).get("Size"));
                                     else {
                                         Main.printSoloMessage("Failed to load the lobby, loading lobbies list..");
                                         Thread.sleep(2000);

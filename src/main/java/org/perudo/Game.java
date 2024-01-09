@@ -184,6 +184,7 @@ public class Game {
                     plrs.add(value.getUsername() + (value == currentHost ? " (host)" : ""));
                 });
 
+                replicatedData.put("Size", size);
                 replicatedData.put("Success", true);
                 replicatedData.put("Players", plrs);
                 replicatedData.put("Name", getName());

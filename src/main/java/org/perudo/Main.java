@@ -11,6 +11,7 @@ import java.util.function.Function;
 
 public class Main {
     private static CustomConsole console;
+    private static String currentUsername;
     private static ClientInterface currentClient;
 
     public static void main(String[] args) {
@@ -202,10 +203,28 @@ public class Main {
             }
         });
 
+        menu.addOption("3", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                createLobby(3, finalPass);
+
+                return null;
+            }
+        });
+
         menu.addOption("4", new Function<String, Void>() {
             @Override
             public Void apply(String string) {
                 createLobby(4, finalPass);
+
+                return null;
+            }
+        });
+
+        menu.addOption("5", new Function<String, Void>() {
+            @Override
+            public Void apply(String string) {
+                createLobby(5, finalPass);
 
                 return null;
             }
@@ -333,6 +352,7 @@ public class Main {
         String old = (String) ClientStorage.getSetting("username");
 
         if (old != null && !old.isEmpty()) {
+            currentUsername = old;
             console.println(old);
             console.println("------------------");
 
@@ -359,6 +379,7 @@ public class Main {
         } else {
             String username = console.readln();
             ClientStorage.updateSetting("username", username, true);
+            currentUsername = username;
             clientLogin(username);
         }
     }
@@ -432,14 +453,13 @@ public class Main {
         console.drawOptionsMenu(menu);
     }
 
-    public static void printLobbyRoom(String name, ArrayList<String> players, String host) {
+    public static void printLobbyRoom(String name, ArrayList<String> players, String host, Number size) {
         console.clear();
-        console.println(name);
+        console.println(STR."\{name} (\{players.size()}/\{size.intValue()})");
 
-        if (players != null)
-            players.forEach((value) -> {
-                console.println(value);
-            });
+        players.forEach((value) -> {
+            console.println(value);
+        });
 
         console.println("------------------");
         OptionsMenu menu = new OptionsMenu();
@@ -451,6 +471,16 @@ public class Main {
                 return null;
             }
         });
+
+        if (players.size() == size.intValue() && currentUsername != null && currentUsername.equals(host))
+            menu.addOption("Start game", new Function<String, Void>() {
+                @Override
+                public Void apply(String s) {
+                    currentClient.sendMessage("Start", null, true);
+
+                    return null;
+                }
+            });
 
         console.drawOptionsMenu(menu);
     }

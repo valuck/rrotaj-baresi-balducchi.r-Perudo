@@ -45,206 +45,198 @@ public class ClientHandler implements Runnable {
         try {
             String inputLine;
 
-            // Setup response message
-            LinkedHashMap<String, Object> newData = new LinkedHashMap<>();
-            Message response = null;
-
             // Checks for a message input
             while ((inputLine = in.readLine()) != null) {
-                try {
-                    // Get the received message
-                    System.out.println(STR."Received from client: \{inputLine}");
+                String finalInputLine = inputLine;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Setup response message
+                        LinkedHashMap<String, Object> newData = new LinkedHashMap<>();
+                        Message response = null;
 
-                    boolean toEncode = false;
-                    Message message = new Message(this.user, inputLine);
+                        try {
+                            // Get the received message
+                            System.out.println(STR."Received from client: \{finalInputLine}");
 
-                    // Set encoding key for RSA encryption if present in the message
-                    String encoder = message.getEncodingKey();
-                    if (encoder != null) {
-                        this.user.setEncodingKey(encoder);
-                        toEncode = true; // If the message is encoded, reply with an encoded message
-                    }
+                            boolean toEncode = false;
+                            Message message = new Message(user, finalInputLine);
 
-                    // Get required data
-                    String scope = message.getScope();
-                    Object data = message.getData();
-
-                    if (scope != null)
-
-                        // Process the requested action
-                    {
-                        switch (scope) {
-                            /*
-                                Connection
-                             */
-                            case "Connection": {
-                                toEncode = true; // Allows the client to get the encoding key
-                                newData.put("Success", true); // Build response
-                                break;
+                            // Set encoding key for RSA encryption if present in the message
+                            String encoder = message.getEncodingKey();
+                            if (encoder != null) {
+                                user.setEncodingKey(encoder);
+                                toEncode = true; // If the message is encoded, reply with an encoded message
                             }
 
-                            /*
-                                Ping
-                             */
-                            case "Ping": {
-                                newData.put("Success", true);
-                                break;
-                            }
+                            // Get required data
+                            String scope = message.getScope();
+                            Object data = message.getData();
 
-                            /*
-                                Info:
-                                - Username: String
-                                - LastToken: String
-                             */
-                            case "Login": {
-                                if (data == null) { // Data is required
-                                    newData.put("Success", false);
-                                    newData.put("Error", "Missing data");
-                                    break;
-                                }
+                            if (scope != null) {
+                                switch (scope) {
+                                    case "Connection": {
+                                        toEncode = true; // Allows the client to get the encoding key
+                                        newData.put("Success", true); // Build response
+                                        break;
+                                    }
 
-                                // Get the data
-                                LinkedTreeMap<String, String> info = (LinkedTreeMap<String, String>) data;
-                                String missing = "Missing:";
+                                    case "Ping": {
+                                        newData.put("Success", true);
+                                        break;
+                                    }
 
-                                if (info.containsKey("Username")) // Set the username or set error
-                                    this.user.setUsername(info.get("Username"));
-                                else
-                                    missing = STR."\{missing} Username: String";
-
-                                if (info.containsKey("LastToken")) { // Allow to log back in a lobby if disconnected
-                                    this.user.setCurrentToken(info.get("LastToken"));
-                                    // Put lobby check here!
-                                }
-
-                                // Build response
-                                newData.put("Success", missing.equals("Missing:"));
-                                newData.put("Error", missing.equals("Missing:") ? null : missing);
-                                break;
-                            }
-
-                            /*
-                                Lobbies:
-                             */
-                            case "Lobbies": {
-                                this.user.disconnectFromLobby();
-
-                                LinkedTreeMap<String, String> publicLobbies = new LinkedTreeMap<>();
-                                LinkedTreeMap<String, String> privateLobbies = new LinkedTreeMap<>();
-
-                                LinkedTreeMap<Integer, Game> lobbies = Game.getLobbies();
-                                lobbies.forEach((key, value) -> {
-                                    String name = STR."\{value.getName()} (\{value.getPlayers().size()}/\{value.getSize()})";
-
-                                    if (value.hasPassword())
-                                        privateLobbies.put(key.toString(), name);
-                                    else
-                                        publicLobbies.put(key.toString(), name);
-                                });
-
-                                newData.put("Success", true);
-                                newData.put("Public", publicLobbies);
-                                newData.put("Private", privateLobbies);
-                                break;
-                            }
-
-                            /*
-                                Create:
-                                - Size: Int
-                             */
-                            case "Create": {
-                                if (this.user.getUsername() == null) {
-                                    newData.put("Success", false);
-                                    newData.put("Error", "Not logged in");
-                                    break;
-                                }
-
-                                if (data == null || !((LinkedTreeMap) data).containsKey("Size")) { // Data is required
-                                    newData.put("Success", false);
-                                    newData.put("Error", "Missing data");
-                                    break;
-                                }
-
-                                String password = null;
-                                if (((LinkedTreeMap) data).containsKey("Password"))
-                                    password = (String) ((LinkedTreeMap) data).get("Password");
-
-                                Game newLobby = new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), this.user, password);
-                                newData.put("Success", true);
-                                break;
-                            }
-
-                            case "Join": {
-                                if (this.user.getUsername() == null) {
-                                    newData.put("Success", false);
-                                    newData.put("Error", "Not logged in");
-                                    break;
-                                }
-
-                                if (data == null || !((LinkedTreeMap) data).containsKey("Lobby")) { // Data is required
-                                    newData.put("Success", false);
-                                    newData.put("Error", "Missing data");
-                                    break;
-                                }
-
-                                Game lobby = Game.getByLobbyId(Integer.parseInt((String) ((LinkedTreeMap) data).get("Lobby")));
-                                if (lobby != null) {
-                                    for (User player : lobby.getPlayers()) {// Check if another player is using the same name
-                                        if (player.getUsername().equals(this.user.getUsername())) {
-                                            newData.put("Success", false);
-                                            newData.put("Error", "Username already in use in this lobby");
+                                    case "Login": {
+                                        if (data == null) { // Data is required
+                                            newData.put("Error", "Missing data");
                                             break;
                                         }
+
+                                        // Get the data
+                                        LinkedTreeMap<String, String> info = (LinkedTreeMap<String, String>) data;
+                                        String missing = "Missing:";
+
+                                        if (info.containsKey("Username")) // Set the username or set error
+                                            user.setUsername(info.get("Username"));
+                                        else
+                                            missing = STR."\{missing} Username: String";
+
+                                        if (info.containsKey("LastToken")) { // Allow to log back in a lobby if disconnected
+                                            user.setCurrentToken(info.get("LastToken"));
+                                            // Put lobby check here!
+                                        }
+
+                                        // Build response
+                                        newData.put("Success", missing.equals("Missing:"));
+                                        newData.put("Error", missing.equals("Missing:") ? null : missing);
+                                        break;
                                     }
 
-                                    String token = lobby.join(this.user, (String) ((LinkedTreeMap) data).get("Password"));
+                                    case "Lobbies": {
+                                        user.disconnectFromLobby();
 
-                                    if (token == null) {
-                                        newData.put("Success", false);
-                                        newData.put("Error", "Not authorized to join");
-                                    } else {
+                                        LinkedTreeMap<String, String> publicLobbies = new LinkedTreeMap<>();
+                                        LinkedTreeMap<String, String> privateLobbies = new LinkedTreeMap<>();
+
+                                        LinkedTreeMap<Integer, Game> lobbies = Game.getLobbies();
+                                        lobbies.forEach((key, value) -> {
+                                            String name = STR."\{value.getName()} (\{value.getPlayers().size()}/\{value.getSize()})";
+
+                                            if (value.hasPassword())
+                                                privateLobbies.put(key.toString(), name);
+                                            else
+                                                publicLobbies.put(key.toString(), name);
+                                        });
+
                                         newData.put("Success", true);
-                                        newData.put("Token", token);
-                                        // Update member list on other clients
+                                        newData.put("Public", publicLobbies);
+                                        newData.put("Private", privateLobbies);
+                                        break;
                                     }
-                                } else {
-                                    newData.put("Success", false);
-                                    newData.put("Error", "Lobby not found");
+
+                                    case "Create": {
+                                        if (user.getUsername() == null) {
+                                            newData.put("Error", "Not logged in");
+                                            break;
+                                        }
+
+                                        if (data == null || !((LinkedTreeMap) data).containsKey("Size")) { // Data is required
+                                            newData.put("Error", "Missing data");
+                                            break;
+                                        }
+
+                                        String password = null;
+                                        if (((LinkedTreeMap) data).containsKey("Password"))
+                                            password = (String) ((LinkedTreeMap) data).get("Password");
+
+                                        new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), user, password);
+                                        newData.put("Success", true);
+                                        break;
+                                    }
+
+                                    case "Join": {
+                                        if (user.getUsername() == null) {
+                                            newData.put("Error", "Not logged in");
+                                            break;
+                                        }
+
+                                        if (data == null || !((LinkedTreeMap) data).containsKey("Lobby")) { // Data is required
+                                            newData.put("Error", "Missing data");
+                                            break;
+                                        }
+
+                                        Game lobby = Game.getByLobbyId(Integer.parseInt((String) ((LinkedTreeMap) data).get("Lobby")));
+                                        if (lobby != null) {
+                                            for (User player : lobby.getPlayers()) {// Check if another player is using the same name
+                                                if (player.getUsername().equals(user.getUsername())) {
+                                                    newData.put("Error", "Username already in use in this lobby");
+                                                    break;
+                                                }
+                                            }
+
+                                            String token = lobby.join(user, (String) ((LinkedTreeMap) data).get("Password"));
+
+                                            if (token == null)
+                                                newData.put("Error", "Not authorized to join");
+                                            else {
+                                                newData.put("Success", true);
+                                                newData.put("Token", token);
+                                                // Update member list on other clients
+                                            }
+                                        } else
+                                            newData.put("Error", "Lobby not found");
+
+                                        break;
+                                    }
+
+                                    case "Start": {
+                                        Game lobby = user.getLobby();
+                                        if (lobby == null) {
+                                            newData.put("Error", "Not in a lobby");
+                                            return;
+                                        }
+
+                                        if (lobby.getHost() != user) {
+                                            newData.put("Error", "Not authorized");
+                                            return;
+                                        }
+
+                                        lobby.startGame();
+                                        newData.put("Success", true);
+                                        break;
+                                    }
+
+                                    default: {
+                                        newData.put("Error", "Invalid scope");
+                                    }
                                 }
-
-                                break;
+                            } else {
+                                // Build error response
+                                newData.put("Error", "Missing scope");
                             }
 
-                            default: {
-                                newData.put("Success", false);
-                                newData.put("Error", "Invalid scope");
-                            }
+                            response = new Message(user, scope, newData, toEncode);
+                        } catch (SignatureException e) {
+                            // Build signature exception response
+                            newData.put("Error", e.getMessage());
+                        } catch (Exception e) {
+                            System.err.println("Error while processing the client message: ");
+                            e.printStackTrace();
+
+                            // Build general exception response
+                            newData.put("Error", "Server exception!");
                         }
-                    } else {
-                        // Build error response
-                        newData.put("Success", false);
-                        newData.put("Error", "Missing scope");
+
+                        if (!newData.containsKey("Success"))
+                            newData.put("Success", false);
+
+                        if (response == null) // build an exception message
+                            response = new Message(user, "Exception", newData, false);
+
+                        // send response message
+                        out.println(response.toJson());
                     }
-
-                    response = new Message(this.user, scope, newData, toEncode);
-                } catch (SignatureException e) {
-                    // Build signature exception response
-                    newData.put("Success", false);
-                    newData.put("Error", e.getMessage());
-                } catch (Exception e) {
-                    System.err.println("Error while processing the client message: ");
-                    e.printStackTrace();
-
-                    // Build general exception response
-                    newData.put("Success", false);
-                    newData.put("Error", "Server exception!");
-                }
-
-                if (response == null) // build an exception message
-                    response = new Message(this.user, "Exception", newData, false);
-
-                // send response message
-                out.println(response.toJson());
+                }).start();
             }
         } catch (SocketException e) {
             // Socket is closing, ignore.
