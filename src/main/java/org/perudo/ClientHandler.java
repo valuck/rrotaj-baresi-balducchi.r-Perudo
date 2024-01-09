@@ -170,9 +170,7 @@ public class ClientHandler implements Runnable {
                                     password = (String) ((LinkedTreeMap) data).get("Password");
 
                                 Game newLobby = new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), this.user, password);
-
                                 newData.put("Success", true);
-                                membersUpdated(newLobby);
                                 break;
                             }
 
@@ -207,7 +205,7 @@ public class ClientHandler implements Runnable {
                                     } else {
                                         newData.put("Success", true);
                                         newData.put("Token", token);
-                                        membersUpdated(lobby); // Update member list on other clients
+                                        // Update member list on other clients
                                     }
                                 } else {
                                     newData.put("Success", false);
@@ -266,27 +264,6 @@ public class ClientHandler implements Runnable {
 
         this.close();
         System.out.println("Client handler closed");
-    }
-
-    private void membersUpdated(Game lobby) {
-        // Replicate to all lobby members
-        new Thread(new Runnable() {
-            @Override
-            public void run() { // Update player list
-                LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
-                LinkedList<String> players = new LinkedList<>();
-                lobby.getPlayers().forEach((value) -> {
-                    players.add(value.getUsername());
-                });
-
-                replicatedData.put("Success", true);
-                replicatedData.put("Players", players);
-                replicatedData.put("Name", lobby.getName());
-                replicatedData.put("Host", lobby.getHost().getUsername());
-
-                lobby.replicateMessage("Members", replicatedData, true);
-            }
-        }).start();
     }
 
     public User getUser() {

@@ -3,6 +3,7 @@ package org.perudo;
 import Messaging.User;
 import Storage.ServerStorage;
 
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -21,6 +22,8 @@ public class ServerInterface implements Runnable {
             // Open a new serverSocket to the selected port after setting up the database
             running = ServerStorage.setup(); // If fails it closes the server
             serverSocket = new ServerSocket(port);
+        } catch (BindException e) {
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

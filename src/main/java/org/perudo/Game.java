@@ -126,6 +126,7 @@ public class Game {
         this.players.add(user);
         this.used = true;
 
+        this.membersUpdated();
         return token;
     }
 
@@ -139,7 +140,10 @@ public class Game {
 
         if (this.players.isEmpty()) {
             this.remove();
+            return;
         }
+
+        this.membersUpdated();
     }
 
     public void startGame() {
@@ -165,6 +169,27 @@ public class Game {
             if (handler != null) // if the user has a valid handler
                 handler.sendMessage(scope, data, encode);
         }
+    }
+
+    public void membersUpdated() {
+        // Replicate to all lobby members
+        new Thread(new Runnable() {
+            @Override
+            public void run() { // Update player list
+                LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+                LinkedList<String> plrs = new LinkedList<>();
+                players.forEach((value) -> {
+                    plrs.add(value.getUsername());
+                });
+
+                replicatedData.put("Success", true);
+                replicatedData.put("Players", plrs);
+                replicatedData.put("Name", getName());
+                replicatedData.put("Host", getHost().getUsername());
+
+                replicateMessage("Members", replicatedData, true);
+            }
+        }).start();
     }
 
     public static void reloadGames() {
