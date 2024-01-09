@@ -15,15 +15,17 @@ public class ServerInterface implements Runnable {
     private static boolean running;
 
     public ServerInterface(int port) {
-        if (serverSocket != null) // Checks if the server has already been initialized
-            throw new RuntimeException("Server is already initialized");
+        if (serverSocket != null) { // Checks if the server has already been initialized
+            Main.printRestart("Server is already initialized");
+            throw new RuntimeException("Server is already initialized"); // Block thread
+        }
 
         try {
             // Open a new serverSocket to the selected port after setting up the database
             running = ServerStorage.setup(); // If fails it closes the server
             serverSocket = new ServerSocket(port);
         } catch (BindException e) {
-
+            Main.printRestart("Address already in use");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -33,6 +35,9 @@ public class ServerInterface implements Runnable {
     public void run() {
         System.out.println("[SERVER]: Online");
         Main.printMessage("Server online");
+
+        if (serverSocket == null)
+            running = false;
 
         if (running) // can start on false
             Game.reloadGames();

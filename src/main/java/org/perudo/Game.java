@@ -76,12 +76,12 @@ public class Game {
 
     public Game(int size, User host, String password) {
         this.password = hashString(password);
-        this.players.add(host);
         this.size = size;
         this.name = STR."\{host.getUsername()}'s lobby";
 
         this.lobbyId = ServerStorage.newLobby(this.name, this.size, this.password);
         games.put(this.lobbyId, this);
+        this.join(host, password);
     }
 
     public void remove() {
@@ -178,14 +178,16 @@ public class Game {
             public void run() { // Update player list
                 LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
                 LinkedList<String> plrs = new LinkedList<>();
+                User currentHost = getHost();
+
                 players.forEach((value) -> {
-                    plrs.add(value.getUsername());
+                    plrs.add(value.getUsername() + (value == currentHost ? " (host)" : ""));
                 });
 
                 replicatedData.put("Success", true);
                 replicatedData.put("Players", plrs);
                 replicatedData.put("Name", getName());
-                replicatedData.put("Host", getHost().getUsername());
+                replicatedData.put("Host", currentHost.getUsername());
 
                 replicateMessage("Members", replicatedData, true);
             }

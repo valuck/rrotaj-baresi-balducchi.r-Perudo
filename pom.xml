@@ -31,6 +31,35 @@
                     <compilerArgs>--enable-preview</compilerArgs>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version> <!-- Ensure this is the latest or a compatible version -->
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>your.main.Class</mainClass> <!-- Replace with your main class -->
+                                </transformer>
+                            </transformers>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.mysql:mysql-connector-j</include>
+                                    <include>com.google.code.gson:gson</include>
+                                    <include>de.mkammerer:argon2-jvm</include>
+                                    <!-- Include other dependencies as needed -->
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -51,7 +80,7 @@
         <dependency>
             <groupId>de.mkammerer</groupId>
             <artifactId>argon2-jvm</artifactId>
-            <version>2.9</version> <!-- Ensure you use the latest version -->
+            <version>2.11</version>
         </dependency>
     </dependencies>
 </project>
