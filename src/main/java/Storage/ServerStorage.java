@@ -1,6 +1,8 @@
 package Storage;
 
 import com.mysql.cj.jdbc.exceptions.CommunicationsException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.perudo.Main;
 
 import java.sql.*;
@@ -8,6 +10,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 
 public class ServerStorage {
+    private static final Logger logger = LogManager.getLogger(ServerStorage.class);
     private static Connection conn;
 
     private static void initCheck() { // throw an exception if the database connection is not initialized
@@ -53,16 +56,16 @@ public class ServerStorage {
                     "   ON UPDATE CASCADE " +
                     "   ON DELETE CASCADE)");
 
-            System.out.println("[SERVER DATABASE]: Online");
+            logger.info("[SERVER DATABASE]: Online");
             stmt.close();
 
             return true;
         } catch (CommunicationsException e) {
             String message = "Unable to connect the server to the database.";
-            System.err.println(message);
+            logger.error(message, e);
             Main.printMessage(message);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Exception on database initialization", e);
         }
 
         return false;
@@ -99,8 +102,7 @@ public class ServerStorage {
 
             return true;
         } catch (Exception e) {
-            System.err.println("Error while erasing the database:");
-            e.printStackTrace();
+            logger.error("Error while erasing the database", e);
         }
 
         return false;
@@ -118,8 +120,7 @@ public class ServerStorage {
 
             return results > 0;
         } catch (Exception e) {
-            System.err.println("Error while updating table:");
-            e.printStackTrace();
+            logger.error("Error while updating table", e);
         }
 
         return false;
@@ -151,8 +152,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the lobbies list from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the lobbies list from the database", e);
         }
 
         return ids;
@@ -180,8 +180,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while creating a new lobby in the database:");
-            e.printStackTrace();
+            logger.error("Error while creating a new lobby in the database", e);
         }
 
         return result;
@@ -204,8 +203,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the lobby size from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the lobby size from the database", e);
         }
 
         return size;
@@ -228,8 +226,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the lobby name from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the lobby name from the database", e);
         }
 
         return name;
@@ -252,8 +249,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the lobby password from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the lobby password from the database", e);
         }
 
         return password;
@@ -286,12 +282,10 @@ public class ServerStorage {
                 return results > 0;
 
             } catch (Exception e2) {
-                System.err.println(STR."Error resetting shift index in lobby \{lobbyId}");
-                e2.printStackTrace();
+                logger.error(STR."Error resetting shift index in lobby \{lobbyId}", e);
             }
         } catch (Exception e) {
-            System.err.println(STR."Error shifting index in lobby \{lobbyId}");
-            e.printStackTrace();
+            logger.error(STR."Error shifting index in lobby \{lobbyId}", e);
         }
 
         return false;
@@ -314,8 +308,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the lobbies list from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the lobbies list from the database", e);
         }
 
         return index;
@@ -335,8 +328,7 @@ public class ServerStorage {
 
             return results > 0;
         } catch (Exception e) {
-            System.err.println(STR."Error while deleting the lobby \{lobbyId} from the database:");
-            e.printStackTrace();
+            logger.error(STR."Error while deleting the lobby \{lobbyId} from the database", e);
         }
 
         return false;
@@ -362,8 +354,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while creating a new token in the database:");
-            e.printStackTrace();
+            logger.error("Error while creating a new token in the database", e);
         }
 
         return result;
@@ -386,8 +377,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the tokens list from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the tokens list from the database", e);
         }
 
         return lobbyId;
@@ -410,8 +400,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println("Error while getting the tokens list from the database:");
-            e.printStackTrace();
+            logger.error("Error while getting the tokens list from the database", e);
         }
 
         return tokens;
@@ -431,8 +420,7 @@ public class ServerStorage {
 
             return results > 0;
         } catch (Exception e) {
-            System.err.println(STR."Error while deleting the token \{token} from the database:");
-            e.printStackTrace();
+            logger.error(STR."Error while deleting the token \{token} from the database", e);
         }
 
         return false;
@@ -455,8 +443,7 @@ public class ServerStorage {
 
             newState.close();
         } catch (Exception e) {
-            System.err.println(STR."Error while getting the dice count from token \{token}");
-            e.printStackTrace();
+            logger.error(STR."Error while getting the dice count from token \{token}", e);
         }
 
         return count;
@@ -499,15 +486,13 @@ public class ServerStorage {
                 }
 
                 newState.close();
-                System.err.println(STR."The dice value of token: \{token} has been reset to its minimum value due to an excessive decrement of its value");
+                logger.warn(STR."The dice value of token: \{token} has been reset to its minimum value due to an excessive decrement of its value");
                 return result;
             } catch (Exception e2) {
-                System.err.println(STR."Error resetting dice value in token \{token}");
-                e2.printStackTrace();
+                logger.error(STR."Error resetting dice value in token \{token}", e);
             }
         } catch (Exception e) {
-            System.err.println(STR."Error updating dice value in token \{token}");
-            e.printStackTrace();
+            logger.error(STR."Error updating dice value in token \{token}", e);
         }
 
         return false;

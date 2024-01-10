@@ -3,6 +3,8 @@ package Storage;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.LinkedTreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,6 +13,8 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 
 public class ClientStorage {
+    private static final Logger logger = LogManager.getLogger(ClientStorage.class);
+
     private static LinkedTreeMap<String, Object> settings;
     private static final String settingsPath = "settings.json";
 
@@ -32,8 +36,7 @@ public class ClientStorage {
             writer.close();
 
         } catch (IOException e) {
-            System.err.println("Error while saving settings:");
-            e.printStackTrace();
+            logger.error("Error while saving settings:", e);
             return false;
         }
 
@@ -70,8 +73,7 @@ public class ClientStorage {
             return loaded;
 
         } catch (IOException e) {
-            System.err.println("Error while loading settings:");
-            e.printStackTrace();
+            logger.error("Error while loading settings", e);
         }
 
         return null;

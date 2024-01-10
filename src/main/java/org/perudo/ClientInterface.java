@@ -4,6 +4,8 @@ import Messaging.Message;
 import Messaging.User;
 import Storage.ClientStorage;
 import com.google.gson.internal.LinkedTreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -16,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class ClientInterface implements Runnable {
+    private static final Logger logger = LogManager.getLogger(ClientInterface.class);
+
     private Timestamp ping_start;
     private Timestamp ping_end;
     private Socket clientSocket;
@@ -34,45 +38,43 @@ public class ClientInterface implements Runnable {
             this.running = true;
             this.initConnection(); // Initialize connection with the server to share RSA keys.
 
-            new Thread(new Runnable() { // Connection checking thread
-                @Override
-                public void run() {
-                    while (true) { // ping the server every 3 sec
-                        Timestamp newTime = new Timestamp(System.currentTimeMillis());
+            // Connection checking thread
+            new Thread(() -> {
+                while (true) { // ping the server every 3 sec
+                    Timestamp newTime = new Timestamp(System.currentTimeMillis());
 
-                        if (server.getEncodingKey() != null) { // if connection is initialized
-                            if (ping_end != null) {
-                                long ping = Math.abs(ping_end.getTime() - ping_start.getTime()); // calculate ping
-                                System.out.println(ping + "ms");
-                                // get ping event from here!
+                    if (server.getEncodingKey() != null) { // if connection is initialized
+                        if (ping_end != null) {
+                            long ping = Math.abs(ping_end.getTime() - ping_start.getTime()); // calculate ping
+                            System.out.println(STR."\{ping}ms");
+                            // get ping event from here!
 
-                                if (ping > 10000) { // if over 10 seconds
-                                    System.err.println("Connection lost or ping too high.");
-                                    // get connection lost event from here!
+                            if (ping > 10000) { // if over 10 seconds
+                                logger.warn("Connection lost or ping too high");
+                                // get connection lost event from here!
 
-                                    close();
-                                    break; // exits the loop
-                                }
+                                close();
+                                break; // exits the loop
                             }
-                            else // Initialize ping
-                                ping_end = newTime;
-
-                            ping_start = newTime;
-                            if (!sendMessage("Ping", null, true)) // send a ping message
-                                break; // Client already closed, disconnect
                         }
+                        else // Initialize ping
+                            ping_end = newTime;
 
-                        try {
-                            Thread.sleep(3000);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
+                        ping_start = newTime;
+                        if (!sendMessage("Ping", null, true)) // send a ping message
+                            break; // Client already closed, disconnect
+                    }
+
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }).start();
         } catch (ConnectException e) {
             this.running = false;
-            System.err.println("Server connection refused!");
+            logger.warn("Server connection refused!");
             Main.printRestart("Connection refused!");
 
         } catch (Exception e) {
@@ -163,7 +165,7 @@ public class ClientInterface implements Runnable {
 
                                 case "Join": {
                                     if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Token")) // Save the new token to access the new lobby
-                                        ClientStorage.updateSetting("token", (String) ((LinkedTreeMap) data).get("Token"), true);
+                                        ClientStorage.updateSetting("token", ((LinkedTreeMap) data).get("Token"), true);
                                     else {
                                         Main.printSoloMessage("Unable to join the lobby, loading lobbies list..");
                                         Thread.sleep(2000);
@@ -176,29 +178,26 @@ public class ClientInterface implements Runnable {
 
                                 case "Shutdown": {
                                     if (data != null) {
-                                        System.err.println((String) data);
+                                        logger.warn((String) data);
                                         // get shutdown event from here!
 
-                                        System.err.println("Disconnecting client");
+                                        logger.warn("Disconnecting client");
                                         close();
                                     }
 
                                     break;
                                 }
                             }
-
-                        //System.err.println(this.server.getEncodingKey());
                     }
                 } catch (SocketException e) {
                     // Socket is closing, ignore.
 
                 } catch (Exception e) {
-                    System.err.println("Error on processing server message: " );
-                    e.printStackTrace();
+                    logger.error("Error on processing server message", e);
                 }
             }
 
-            System.out.println("Client closed");
+            logger.info("Client closed");
         } catch (Exception e) {
             throw new RuntimeException(STR."Error while listening for the server\{e}");
         }
@@ -220,7 +219,6 @@ public class ClientInterface implements Runnable {
     public boolean sendMessage(String scope, Object data, boolean encode) {
         if (!this.running)
             return false;
-            //System.err.println("Unable to send message, client is closed!");
 
         // Wait for the sever to share it's RSA key if not present
         if (!Objects.equals(scope, "Connection"))
@@ -247,7 +245,7 @@ public class ClientInterface implements Runnable {
         this.running = false;
 
         try {
-            System.out.println("Client closing");
+            logger.warn("Client closing");
             // Close clientSocket, input & output
             if (this.clientSocket != null && !this.clientSocket.isClosed())
                 this.clientSocket.close();
@@ -259,7 +257,7 @@ public class ClientInterface implements Runnable {
                 this.in.close();
 
         } catch (Exception e) {
-            System.err.println("Error while closing the client: " + e);
+            logger.error("Error while closing the client", e);
         }
     }
 }

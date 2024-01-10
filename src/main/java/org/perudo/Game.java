@@ -5,11 +5,15 @@ import Storage.ServerStorage;
 import com.google.gson.internal.LinkedTreeMap;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.LinkedList;
 
 public class Game {
-    private static final LinkedTreeMap<Integer, Game> games = new LinkedTreeMap();
+    private static final Logger logger = LogManager.getLogger(Game.class);
+
+    private static final LinkedTreeMap<Integer, Game> games = new LinkedTreeMap<>();
     private final LinkedList<User> disconnected = new LinkedList<>();
     private final LinkedList<User> players = new LinkedList<>();
     private final String password;
@@ -52,7 +56,7 @@ public class Game {
         });
 
         games.put(this.lobbyId, this);
-        System.err.println(STR."Reloaded \{this.name}");
+        logger.info(STR."Reloaded \{this.name}");
 
         new Thread(new Runnable() {
             @Override
@@ -173,34 +177,30 @@ public class Game {
 
     public void membersUpdated() {
         // Replicate to all lobby members
-        new Thread(new Runnable() {
-            @Override
-            public void run() { // Update player list
-                LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
-                LinkedList<String> plrs = new LinkedList<>();
-                User currentHost = getHost();
+        new Thread(() -> { // Update player list
+            LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+            LinkedList<String> plrs = new LinkedList<>();
+            User currentHost = getHost();
 
-                players.forEach((value) -> {
-                    plrs.add(value.getUsername() + (value == currentHost ? " (host)" : ""));
-                });
+            players.forEach((value) -> {
+                plrs.add(value.getUsername() + (value == currentHost ? " (host)" : ""));
+            });
 
-                replicatedData.put("Size", size);
-                replicatedData.put("Success", true);
-                replicatedData.put("Players", plrs);
-                replicatedData.put("Name", getName());
-                replicatedData.put("Host", currentHost.getUsername());
+            replicatedData.put("Size", size);
+            replicatedData.put("Success", true);
+            replicatedData.put("Players", plrs);
+            replicatedData.put("Name", getName());
+            replicatedData.put("Host", currentHost.getUsername());
 
-                replicateMessage("Members", replicatedData, true);
-            }
+            replicateMessage("Members", replicatedData, true);
         }).start();
     }
 
     public static void reloadGames() {
         LinkedList<Integer> lobbies = ServerStorage.getLobbies();
 
-        lobbies.forEach((value) -> {
-            new Game(value); // Just initialize them
-        });
+        // Just initialize them
+        lobbies.forEach(Game::new);
     }
 
     public static LinkedTreeMap<Integer, Game> getLobbies() {

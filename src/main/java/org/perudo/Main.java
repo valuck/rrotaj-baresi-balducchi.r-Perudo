@@ -7,7 +7,6 @@ import UserInterface.OptionsMenu;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.util.ArrayList;
-import java.util.function.Function;
 
 public class Main {
     private static CustomConsole console;
@@ -44,22 +43,15 @@ public class Main {
             console.println("------------------");
 
             OptionsMenu menu = new OptionsMenu();
-            menu.addOption("Continue", new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    printPort(old, false);
-                    return null;
-                }
+            menu.addOption("Continue", _ -> {
+                printPort(old, false);
+                return null;
             });
 
-            menu.addOption("Change", new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    ClientStorage.updateSetting("address", "", true);
-                    starClient(); // Restart
-
-                    return null;
-                }
+            menu.addOption("Change", _ -> {
+                ClientStorage.updateSetting("address", "", true);
+                starClient(); // Restart
+                return null;
             });
 
             console.drawOptionsMenu(menu);
@@ -73,23 +65,17 @@ public class Main {
     private static void connectServer(int port) {
         console.clear();
         OptionsMenu menu = new OptionsMenu();
-        menu.addOption("Soft Shutdown", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                ServerInterface.softShutdown();
-                printRestart("Server has been closed");
+        menu.addOption("Soft Shutdown", _ -> {
+            ServerInterface.softShutdown();
+            printRestart("Server has been closed");
 
-                return null;
-            }
+            return null;
         });
 
-        menu.addOption("Erase Database and Soft Shutdown", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                ServerStorage.eraseDatabase(true);
-                ServerInterface.softShutdown();
-                return null;
-            }
+        menu.addOption("Erase Database and Soft Shutdown", _ -> {
+            ServerStorage.eraseDatabase(true);
+            ServerInterface.softShutdown();
+            return null;
         });
 
         console.drawOptionsMenu(menu);
@@ -151,25 +137,19 @@ public class Main {
             OptionsMenu menu = new OptionsMenu();
             int finalOld = old;
 
-            menu.addOption("Continue", new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    if (isServerPort)
-                        connectServer(finalOld);
-                    else
-                        connectClient(address, finalOld);
-                    return null;
-                }
+            menu.addOption("Continue", _ -> {
+                if (isServerPort)
+                    connectServer(finalOld);
+                else
+                    connectClient(address, finalOld);
+
+                return null;
             });
 
-            menu.addOption("Change", new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    ClientStorage.updateSetting("port", 0, true);
-                    printPort(address, isServerPort); // Restart
-
-                    return null;
-                }
+            menu.addOption("Change", _ -> {
+                ClientStorage.updateSetting("port", 0, true);
+                printPort(address, isServerPort); // Restart
+                return null;
             });
 
             console.drawOptionsMenu(menu);
@@ -194,49 +174,29 @@ public class Main {
         OptionsMenu menu = new OptionsMenu();
 
         String finalPass = pass;
-        menu.addOption("2", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                createLobby(2, finalPass);
-
-                return null;
-            }
+        menu.addOption("2", _ -> {
+            createLobby(2, finalPass);
+            return null;
         });
 
-        menu.addOption("3", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                createLobby(3, finalPass);
-
-                return null;
-            }
+        menu.addOption("3", _ -> {
+            createLobby(3, finalPass);
+            return null;
         });
 
-        menu.addOption("4", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                createLobby(4, finalPass);
-
-                return null;
-            }
+        menu.addOption("4", _ -> {
+            createLobby(4, finalPass);
+            return null;
         });
 
-        menu.addOption("5", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                createLobby(5, finalPass);
-
-                return null;
-            }
+        menu.addOption("5", _ -> {
+            createLobby(5, finalPass);
+            return null;
         });
 
-        menu.addOption("6", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                createLobby(6, finalPass);
-
-                return null;
-            }
+        menu.addOption("6", _ -> {
+            createLobby(6, finalPass);
+            return null;
         });
 
         console.drawOptionsMenu(menu);
@@ -248,22 +208,16 @@ public class Main {
         console.println("------------------");
 
         OptionsMenu menu = new OptionsMenu();
-        menu.addOption("Make public", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                hostLobby(false);
+        menu.addOption("Make public", _ -> {
+            hostLobby(false);
 
-                return null;
-            }
+            return null;
         });
 
-        menu.addOption("Make private", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                hostLobby(true);
+        menu.addOption("Make private", _ -> {
+            hostLobby(true);
 
-                return null;
-            }
+            return null;
         });
 
         console.drawOptionsMenu(menu);
@@ -275,42 +229,30 @@ public class Main {
         console.println("------------------");
 
         OptionsMenu menu = new OptionsMenu();
-        menu.addOption("Start as client", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                starClient();
-                return null;
-            }
+        menu.addOption("Start as client", _ -> {
+            starClient();
+            return null;
         });
 
-        menu.addOption("Start as server", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                startServer();
-                return null;
-            }
+        menu.addOption("Start as server", _ -> {
+            startServer();
+            return null;
         });
 
-        menu.addOption("Start both (Testing mode)", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                connectServer(10);
-                starClient();
-                return null;
-            }
+        menu.addOption("Start both (Testing mode)", _ -> {
+            connectServer(10);
+            starClient();
+            return null;
         });
 
-        menu.addOption("Exit", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                ServerInterface.softShutdown();
+        menu.addOption("Exit", _ -> {
+            ServerInterface.softShutdown();
 
-                if (currentClient != null)
-                    currentClient.close();
+            if (currentClient != null)
+                currentClient.close();
 
-                console.close();
-                return null;
-            }
+            console.close();
+            return null;
         });
 
         console.setTextInput(false);
@@ -335,12 +277,9 @@ public class Main {
         console.println("------------------");
 
         OptionsMenu menu = new OptionsMenu();
-        menu.addOption("Continue", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                printInitialize();
-                return null;
-            }
+        menu.addOption("Continue", _ -> {
+            printInitialize();
+            return null;
         });
 
         console.drawOptionsMenu(menu);
@@ -357,22 +296,15 @@ public class Main {
             console.println("------------------");
 
             OptionsMenu menu = new OptionsMenu();
-            menu.addOption("Continue", new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    clientLogin(old);
-                    return null;
-                }
+            menu.addOption("Continue", _ -> {
+                clientLogin(old);
+                return null;
             });
 
-            menu.addOption("Change", new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    ClientStorage.updateSetting("username", "", true);
-                    printLogin(); // Restart
-
-                    return null;
-                }
+            menu.addOption("Change", _ -> {
+                ClientStorage.updateSetting("username", "", true);
+                printLogin(); // Restart
+                return null;
             });
 
             console.drawOptionsMenu(menu);
@@ -390,64 +322,45 @@ public class Main {
         console.println("-----------------<");
 
         OptionsMenu menu = new OptionsMenu();
-        publicLobbies.forEach((key, value) -> {
-            menu.addOption(value, new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    lobbyLogin(key, null);
-                    return null;
-                }
-            });
-        });
+        publicLobbies.forEach((key, value) ->
+                menu.addOption(value, _ -> {
+
+            lobbyLogin(key, null);
+            return null;
+        }));
 
         menu.addOption(" ", null);
         menu.addOption("Private lobbies", null);
         menu.addOption("-----------------<", null);
 
-        privateLobbies.forEach((key, value) -> {
-            menu.addOption(value, new Function<String, Void>() {
-                @Override
-                public Void apply(String string) {
-                    console.clear();
-                    console.println("Please enter the lobby's password");
-                    lobbyLogin(key, console.readln());
+        privateLobbies.forEach((key, value) ->
+                menu.addOption(value, _ -> {
 
-                    return null;
-                }
-            });
-        });
+            console.clear();
+            console.println("Please enter the lobby's password");
+            lobbyLogin(key, console.readln());
+            return null;
+        }));
 
         if (privateLobbies.isEmpty())
             menu.addOption(" ", null);
 
         menu.addOption("----------------->", null);
-        menu.addOption("Host", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                printHostLobby();
-
-                return null;
-            }
+        menu.addOption("Host", _ -> {
+            printHostLobby();
+            return null;
         });
 
-        menu.addOption("Refresh", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                console.clear();
-                console.println("Refreshing..");
-                currentClient.sendMessage("Lobbies", null, true);
-
-                return null;
-            }
+        menu.addOption("Refresh", _ -> {
+            console.clear();
+            console.println("Refreshing..");
+            currentClient.sendMessage("Lobbies", null, true);
+            return null;
         });
 
-        menu.addOption("Disconnect", new Function<String, Void>() {
-            @Override
-            public Void apply(String string) {
-                printRestart("Disconnected");
-
-                return null;
-            }
+        menu.addOption("Disconnect", _ -> {
+            printRestart("Disconnected");
+            return null;
         });
 
         console.drawOptionsMenu(menu);
@@ -457,29 +370,19 @@ public class Main {
         console.clear();
         console.println(STR."\{name} (\{players.size()}/\{size.intValue()})");
 
-        players.forEach((value) -> {
-            console.println(value);
-        });
+        players.forEach((value) -> console.println(value));
 
         console.println("------------------");
         OptionsMenu menu = new OptionsMenu();
-        menu.addOption("Leave lobby", new Function<String, Void>() {
-            @Override
-            public Void apply(String s) {
-                currentClient.sendMessage("Lobbies", null, true);
-
-                return null;
-            }
+        menu.addOption("Leave lobby", _ -> {
+            currentClient.sendMessage("Lobbies", null, true);
+            return null;
         });
 
         if (players.size() == size.intValue() && currentUsername != null && currentUsername.equals(host))
-            menu.addOption("Start game", new Function<String, Void>() {
-                @Override
-                public Void apply(String s) {
-                    currentClient.sendMessage("Start", null, true);
-
-                    return null;
-                }
+            menu.addOption("Start game", _ -> {
+                currentClient.sendMessage("Start", null, true);
+                return null;
             });
 
         console.drawOptionsMenu(menu);

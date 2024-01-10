@@ -2,6 +2,8 @@ package org.perudo;
 
 import Messaging.User;
 import Storage.ServerStorage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.BindException;
 import java.net.ServerSocket;
@@ -10,6 +12,8 @@ import java.net.SocketException;
 import java.util.LinkedList;
 
 public class ServerInterface implements Runnable {
+    private static final Logger logger = LogManager.getLogger(ServerInterface.class);
+
     private static final int softShutdownTime = 5000;
     private static ServerSocket serverSocket;
     private static boolean running;
@@ -33,7 +37,7 @@ public class ServerInterface implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("[SERVER]: Online");
+        logger.info("[SERVER]: Online");
         Main.printMessage("Server online");
 
         if (serverSocket == null)
@@ -49,7 +53,7 @@ public class ServerInterface implements Runnable {
                 if (!running)
                     break; // Exits the loop if shutting down
 
-                System.out.println(STR."[SERVER]: New client connected: \{clientSocket}");
+                logger.info(STR."[SERVER]: New client connected: \{clientSocket}");
 
                 // Create a new thread for each incoming client
                 new Thread(new ClientHandler(clientSocket)).start();
@@ -61,14 +65,13 @@ public class ServerInterface implements Runnable {
                 }
 
             } catch (Exception e) {
-                System.err.println(STR."Error while shutting down the server: \{e}");
+                logger.error("Error while shutting down the server", e);
             }
         } catch (SocketException e) {
             // Socket is closing, ignore.
         }
         catch (Exception e) {
-            System.err.println("Error while listening for clients: ");
-            e.printStackTrace();
+            logger.error("Error while listening for clients", e);
         }
 
         // Save games
@@ -79,7 +82,7 @@ public class ServerInterface implements Runnable {
         ServerStorage.close();
         serverSocket = null;
 
-        System.out.println("[SERVER]: Offline");
+        logger.info("[SERVER]: Offline");
         Main.printRestart("Server closed");
     }
 
@@ -103,8 +106,7 @@ public class ServerInterface implements Runnable {
                 serverSocket.close();
 
         } catch (Exception e) {
-            System.err.println("Error while closing client socket:");
-            e.printStackTrace();
+            logger.error("Error while closing client socket", e);
         }
     }
 

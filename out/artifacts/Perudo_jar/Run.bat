@@ -1,1 +1,1 @@
-java --enable-preview -jar Perudo.jar
+java --enable-preview -jar Perudo.jar -verbose:class

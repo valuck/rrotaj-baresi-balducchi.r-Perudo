@@ -2,6 +2,8 @@ package Messaging;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -10,9 +12,11 @@ import java.security.*;
 import java.util.Base64;
 
 public class Message {
+    private static final Logger logger = LogManager.getLogger(Message.class);
+
     private LinkedTreeMap<String, Object> data;
-    private static PrivateKey privateKey;
-    private static PublicKey publicKey;
+    private static final PrivateKey privateKey;
+    private static final PublicKey publicKey;
 
     static {
         try {
@@ -80,8 +84,7 @@ public class Message {
 
             this.data = body;
         } catch (Exception e) {
-            System.err.println("Unable to generate message signature: ");
-            e.printStackTrace();
+            logger.error("Unable to generate message signature: ", e);
         }
     }
 
@@ -116,14 +119,13 @@ public class Message {
                             throw new SignatureException(e.getMessage());
 
                         } catch (Exception e) {
-                            System.err.println("Unable to verify the message signature.");
-                            e.printStackTrace();
+                            logger.error("Unable to verify the message signature.", e);
                             return;
                         }
                     else
-                        System.err.println("Missing RSA key.");
+                        logger.warn("Missing RSA key.");
                 else {
-                    System.err.println("Missing message signature.");
+                    logger.warn("Missing message signature.");
                     return;
                 }
 
@@ -146,7 +148,7 @@ public class Message {
                     // Replace into the inner message structure
                     content.replace("Data", data);
                 } catch (BadPaddingException e) {
-                    System.err.println("Message can not be decoded: " + e.getMessage());
+                    logger.error("Message can not be decoded", e);
                     // Handle the exception accordingly
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -157,7 +159,7 @@ public class Message {
             this.data = body; // Set the new message's raw data
         }
         else {
-            System.err.println("Missing content");
+            logger.warn("Missing content");
             return;
         }
     }
