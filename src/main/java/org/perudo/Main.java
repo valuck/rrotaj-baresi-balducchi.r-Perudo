@@ -14,6 +14,7 @@ public class Main {
     private static ClientInterface currentClient;
 
     public static void main(String[] args) {
+        // System.setProperty("log4j.configurationFile", String.valueOf(new File("resources", "log4j.xml").toURI()));
         console = new CustomConsole("Perudo");
         printInitialize();
 

@@ -3,16 +3,15 @@
     <output-path>$PROJECT_DIR$/out/artifacts/Perudo_jar</output-path>
     <root id="archive" name="Perudo.jar">
       <element id="module-output" name="Perudo" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/de/mkammerer/argon2-jvm/2.11/argon2-jvm-2.11.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-core/3.0.0-beta1/log4j-core-3.0.0-beta1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-plugins/3.0.0-beta1/log4j-plugins-3.0.0-beta1.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-jpl/3.0.0-beta1/log4j-jpl-3.0.0-beta1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/google/protobuf/protobuf-java/3.21.9/protobuf-java-3.21.9.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/de/mkammerer/argon2-jvm-nolibs/2.11/argon2-jvm-nolibs-2.11.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/mysql/mysql-connector-j/8.2.0/mysql-connector-j-8.2.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-api/3.0.0-beta1/log4j-api-3.0.0-beta1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/java/dev/jna/jna/5.8.0/jna-5.8.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-core/3.0.0-beta1/log4j-core-3.0.0-beta1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-api/3.0.0-beta1/log4j-api-3.0.0-beta1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/de/mkammerer/argon2-jvm/2.11/argon2-jvm-2.11.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/logging/log4j/log4j-plugins/3.0.0-beta1/log4j-plugins-3.0.0-beta1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/mysql/mysql-connector-j/8.2.0/mysql-connector-j-8.2.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/de/mkammerer/argon2-jvm-nolibs/2.11/argon2-jvm-nolibs-2.11.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
