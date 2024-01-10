@@ -58,23 +58,20 @@ public class Game {
         games.put(this.lobbyId, this);
         logger.info(STR."Reloaded \{this.name}");
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i=0; i<40; i++) { // Loops for max 10 minutes
-                    try { // Checks every 15 sec if the lobby has been used
-                        Thread.sleep(15000);
+        new Thread(() -> {
+            for (int i=0; i<40; i++) { // Loops for max 10 minutes
+                try { // Checks every 15 sec if the lobby has been used
+                    Thread.sleep(15000);
 
-                        if (used)
-                            return;
+                    if (used)
+                        return;
 
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-
-                remove(); // Deletes the lobby if isn't used after 10m
             }
+
+            remove(); // Deletes the lobby if isn't used after 10m
         }).start();
     }
 
@@ -182,9 +179,7 @@ public class Game {
             LinkedList<String> plrs = new LinkedList<>();
             User currentHost = getHost();
 
-            players.forEach((value) -> {
-                plrs.add(value.getUsername() + (value == currentHost ? " (host)" : ""));
-            });
+            players.forEach((value) -> plrs.add(value.getUsername() + (value == currentHost ? " (host)" : "")));
 
             replicatedData.put("Size", size);
             replicatedData.put("Success", true);

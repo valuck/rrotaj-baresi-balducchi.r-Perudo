@@ -128,7 +128,7 @@ public class ServerStorage {
 
     public static LinkedList<Integer> getLobbies() {
         initCheck();
-        LinkedList<Integer> ids = new LinkedList<Integer>();
+        LinkedList<Integer> ids = new LinkedList<>();
 
         try {
             // Get all the active lobby ids

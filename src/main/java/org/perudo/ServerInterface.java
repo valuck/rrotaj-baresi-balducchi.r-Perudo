@@ -75,7 +75,7 @@ public class ServerInterface implements Runnable {
         }
 
         // Save games
-        Game.getLobbies().forEach((key, value) -> {
+        Game.getLobbies().forEach((key, _) -> {
             ServerStorage.updateTable("lobbies", "lobby_id", key); // Update last edit time
         });
 
