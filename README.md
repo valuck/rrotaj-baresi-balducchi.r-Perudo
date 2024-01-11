@@ -12,13 +12,19 @@ We recommend using [XAMPP](https://www.apachefriends.org/). Once installed, open
 
 To initiate the server, open the game and choose **Run as Server**. Once the necessary information is provided, the server will run.
 
-## *Technical infos*
+## *Technology Stack*
 
-The game has been built using pure Java SE 21 and MySQL.
+The game has been developed using Java SE 21 and utilizes MySQL for data storage.
 
-### Custom Java Swing Interface:
+### *Custom interface*
 
-- Our project features a bespoke Java Swing interface designed to maintain the classic console aesthetic.
+- Our project features a bespoke **Java Swing interface** designed to maintain the classic console aesthetic.
 - This unique design not only retains the charm of the traditional look but also incorporates modern features such as options selection, color schemes, and more.
 
-### 
+### *Storage*
+
+- The project boasts a **MySQL-based** storage system for the server, ensuring robust data storage for player and lobby information. This implementation provides **exceptional resilience**, even in cases of server crashes.
+
+- Lobbies data is persistently stored for **up to an hour** from their last usage. In the event of a server crash, lobbies will be reloaded and stay up for a **10-minute window** of non-utilization.
+
+- The project also includes client data savings through a **Json** file. This file stores essential information such as settings, **lobby authorization token**, and frequently asked inputs for enhanced user convenience.
