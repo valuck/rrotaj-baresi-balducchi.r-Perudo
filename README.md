@@ -2,7 +2,7 @@
 This school-project aims to transform the traditional **Perudo** game into a modern, simple and engaging digital online product.
 
 Perudo, also known as Liar's Dice, is a classic dice game that combines strategy, bluffing, and a bit of luck.
-- [Perudo rules.](https://drive.google.com/file/d/1BMG5oP0IqFjUksDHWaqN851e3ZiyZCVS/view?usp=drive_link) -- to change into private link
+- Italian [Perudo rules.](https://drive.google.com/file/d/1VzQnszzUQIVI9YLBmQGH977Ybmoo1TDx/view?usp=drivesdk)
 
 ## *How to properly start a server*
 
