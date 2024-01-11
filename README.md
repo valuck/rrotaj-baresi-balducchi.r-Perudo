@@ -25,9 +25,9 @@ The game has been developed using **Java SE 21** and utilizes **MySQL** for data
 
 - The project boasts a **MySQL-based** storage system for the server, ensuring robust data storage for player and lobby information. This implementation provides **exceptional resilience**, even in cases of server crashes.
 
-- Lobbies data is persistently stored for **up to an hour** from their last usage. In the event of a server crash, lobbies will be reloaded and stay up for a **10-minute window** of non-utilization.
+- Lobby's data is persistently stored for **up to an hour** from their last usage. In the event of a server crash, lobbies will be reloaded and stay up for a **10-minute window** of non-utilization.
   
-- Lobby passwords undergo **Argon2 hashing** before storage, ensuring secure and robust encryption.
+- Lobby's password undergo **Argon2 hashing** before storage, ensuring secure and robust encryption.
 
 - The project also includes client data savings through a **Json** file. This file stores essential information such as settings, **lobby authorization token**, and frequently asked inputs for enhanced user convenience.
 
@@ -37,4 +37,4 @@ The game has been developed using **Java SE 21** and utilizes **MySQL** for data
 
 - The server has the capability to listen to an **indefinite number** of clients and concurrently handle **multiple requests** at the time from each client.
 
-- Lobbies are equipped with a secure and unique **authentication token** generated using **UUIDs**. This token allows players to rejoin the lobby in case of connection loss during gameplay, while also preventing others from joining with the same username.
+- Lobbies are equipped with secure and unique **authentication tokens** generated using **UUIDs** for each user. This token allows player to rejoin the lobby in case of connection loss during gameplay, while also preventing others from joining with the same username.
