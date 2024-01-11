@@ -33,7 +33,7 @@ The game has been developed using **Java SE 21** and utilizes **MySQL** for data
 
 ### *Networking & Security*
 
-- The project implements a robust networking system utilizing **RSA encryption** and **Sha256 Signature** for secure data transfers.
+- The project implements a robust networking system utilizing **RSA encryption** and **Sha256 with RSA Signature** for secure data transfers.
 
 - The server has the capability to listen to an **indefinite number** of clients and concurrently handle **multiple requests** at the time from each client.
 
