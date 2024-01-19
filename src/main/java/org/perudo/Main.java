@@ -86,8 +86,12 @@ public class Main {
     }
 
     private static void connectClient(String address, int port) {
-        currentClient = new ClientInterface(address, port);
-        new Thread(currentClient).start();
+        try {
+            currentClient = new ClientInterface(address, port);
+            new Thread(currentClient).start();
+        } catch (Exception _) {
+            printRestart("Unable to connect the client to the address");
+        }
     }
 
     private static void clientLogin(String username) {
@@ -387,5 +391,9 @@ public class Main {
             });
 
         console.drawOptionsMenu(menu);
+    }
+
+    private static void printGame() {
+
     }
 }

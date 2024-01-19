@@ -16,9 +16,11 @@ public class Game {
     private static final LinkedTreeMap<Integer, Game> games = new LinkedTreeMap<>();
     private final LinkedList<User> disconnected = new LinkedList<>();
     private final LinkedList<User> players = new LinkedList<>();
+    private LinkedList<Integer> lastPicks = new LinkedList<>();
     private final String password;
     private final String name;
     private final int lobbyId;
+    private User lastPlayer;
     private boolean started;
     private final int size;
     private boolean used;
@@ -150,6 +152,113 @@ public class Game {
     public void startGame() {
         this.started = true;
         this.disconnected.clear();
+
+        this.lastPlayer = null;
+        this.lastPicks.set(1, 1);
+        this.lastPicks.set(2, 1);
+
+        for (User player : this.players) {
+            diceUpdate(player);
+        }
+
+        startShift(false);
+    }
+
+    public boolean processPicks(User player, int amount, int value) {
+        User current = getUserByShift();
+
+        if (player == null || player != current)
+            return false;
+
+        boolean itsDudo = value >= 7 && lastPlayer != null;
+        String picked = "";
+
+        if (itsDudo) { // its dudo!
+            int correct = 0;
+
+            for (User plr : players)
+                for (int dice : plr.getLastShuffle())
+                    if (dice == value || dice == 1)
+                        correct++;
+
+            if (correct >= amount) {
+                ServerStorage.incrementDice(player.getCurrentToken(), -1);
+                this.dudoUpdate(false, player);
+            } else {
+                ServerStorage.incrementDice(lastPlayer.getCurrentToken(), -1);
+                this.dudoUpdate(true, lastPlayer);
+            }
+
+            lastPlayer = null;
+            picked = "Dudo!";
+        }
+        else {
+            boolean am = amount > 0;
+            int oldAmount = lastPicks.get(1);
+            int oldValue = lastPicks.get(2);
+
+            amount = amount < oldAmount ? oldAmount + 1 : amount;
+
+            if (oldValue >= 6)
+                value = 1;
+            else if (value < 6)
+                value = value < oldValue ? oldValue + 1 : value;
+
+            if (am) {
+                lastPicks.set(1, amount);
+                picked = STR."Amount: \{amount}";
+            }
+
+            if (!am || lastPlayer != null) {
+                lastPicks.set(2, value);
+
+                if (am)
+                    picked = picked + ", ";
+
+                picked = picked + STR."Value: \{value}";
+            }
+        }
+
+        ServerStorage.incrementLobbyShift(this.lobbyId);
+        lastPlayer = current;
+
+        startShift(itsDudo, picked);
+        return true;
+    }
+
+    private User getUserByShift() {
+        int shift = ServerStorage.getLobbyShift(this.lobbyId);
+        LinkedList<String> tokens = ServerStorage.getTokensInLobby(this.lobbyId);
+
+        if (shift >= 0 && tokens.size() > shift) {
+            String selected = tokens.get(shift);
+
+            for (User player : this.players) {
+                if (player.getCurrentToken().equals(selected)) {
+                    return player;
+                }
+            }
+
+            // User not in list anymore
+        }
+
+        return null;
+    }
+
+    private void startShift(boolean canDudo) {
+        User player = getUserByShift();
+
+        if (player != null)
+            pickUpdate(player, canDudo);
+    }
+
+    private void startShift(boolean canDudo, String picked) {
+        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+        replicatedData.put("Success", true);
+        replicatedData.put("Picks", picked);
+
+        replicateMessage("Picked", replicatedData, true);
+        startShift(canDudo);
     }
 
     public static Game getByLobbyId(int lobbyId) {
@@ -189,6 +298,48 @@ public class Game {
 
             replicateMessage("Members", replicatedData, true);
         }).start();
+    }
+
+    private void dudoUpdate(boolean dudo, User plr) {
+        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+        LinkedList<String> plrs = new LinkedList<>();
+
+        for (User player : this.players) {
+            StringBuilder result = new StringBuilder();
+            result.append(player.getUsername()).append(": ");
+
+            for (int dice : player.getLastShuffle())
+                result.append(dice).append(" ");
+
+            plrs.add(result.toString());
+        }
+
+        replicatedData.put("Success", true);
+        replicatedData.put("Results", plrs);
+        replicatedData.put("Victim", STR."\{plr.getUsername()} lost a dice!");
+        replicatedData.put("Verdict", STR."Pick was \{(dudo ? "right" : "wrong")}!");
+        replicateMessage("Dudo", replicatedData, true);
+    }
+
+    private static void diceUpdate(User player) {
+        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+        StringBuilder results = new StringBuilder();
+
+        for (Integer dice : player.shuffle()) {
+            results.append(dice.toString());
+        }
+
+        replicatedData.put("Success", true);
+        replicatedData.put("Dice", results.toString());
+        player.getHandler().sendMessage("Dice", replicatedData, true);
+    }
+
+    private static void pickUpdate(User player, boolean canDudo) {
+        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+        replicatedData.put("Success", true);
+        replicatedData.put("Dudo", true);
+
+        player.getHandler().sendMessage("Pick", replicatedData, true);
     }
 
     public static void reloadGames() {

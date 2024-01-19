@@ -14,6 +14,7 @@ import java.util.Random;
 public class User {
     private static final LinkedList<User> users = new LinkedList<>();
     private PublicKey encodingKey = null;
+    LinkedList<Integer> lastShuffle;
     private ClientHandler handler;
     private String currentToken;
     private String username;
@@ -129,7 +130,7 @@ public class User {
             this.lobby.disconnect(this);
     }
 
-    private LinkedList<Integer> shuffle() {
+    public LinkedList<Integer> shuffle() {
         if (this.lobby.getId() < 0 || this.currentToken == null)
             return null;
 
@@ -139,6 +140,11 @@ public class User {
         for(int i=0; i<dice; i++)
             results.add(new Random().nextInt(1, 6));
 
+        this.lastShuffle = results;
         return results;
+    }
+
+    public LinkedList<Integer> getLastShuffle() {
+        return this.lastShuffle;
     }
 }
