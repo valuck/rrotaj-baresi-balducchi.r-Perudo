@@ -23,6 +23,7 @@ public class Game {
     private User lastPlayer;
     private boolean started;
     private final int size;
+    private boolean paused;
     private boolean used;
 
     private String hashString(String string) {
@@ -97,7 +98,7 @@ public class Game {
             return null;
 
         String token;
-        if (!started && this.players.size() + this.disconnected.size() >= size) { // If the lobby is full
+        if (!this.started || this.players.size() + this.disconnected.size() >= this.size) { // If the lobby is full
             String tempToken = user.getCurrentToken();
             boolean found = false;
 
@@ -129,7 +130,10 @@ public class Game {
         this.players.add(user);
         this.used = true;
 
-        this.membersUpdated();
+        if (this.players.size() >= this.size)
+            this.paused = false;
+
+        this.membersUpdated(this.paused);
         return token;
     }
 
@@ -146,7 +150,7 @@ public class Game {
             return;
         }
 
-        this.membersUpdated();
+        this.membersUpdated(this.started);
     }
 
     public void startGame() {
@@ -281,7 +285,9 @@ public class Game {
         }
     }
 
-    public void membersUpdated() {
+    public void membersUpdated(boolean pause) {
+        if (pause)
+            this.paused = true;
         // Replicate to all lobby members
         new Thread(() -> { // Update player list
             LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
@@ -291,6 +297,7 @@ public class Game {
             players.forEach((value) -> plrs.add(value.getUsername() + (value == currentHost ? " (host)" : "")));
 
             replicatedData.put("Size", size);
+            replicatedData.put("Pause", pause);
             replicatedData.put("Success", true);
             replicatedData.put("Players", plrs);
             replicatedData.put("Name", getName());
@@ -337,7 +344,7 @@ public class Game {
     private static void pickUpdate(User player, boolean canDudo) {
         LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
         replicatedData.put("Success", true);
-        replicatedData.put("Dudo", true);
+        replicatedData.put("Dudo", canDudo);
 
         player.getHandler().sendMessage("Pick", replicatedData, true);
     }

@@ -83,8 +83,8 @@ public class ClientInterface implements Runnable {
         }
     }
 
-    public boolean isSuccess(Object data) {
-        return data != null && ((LinkedTreeMap) data).containsKey("Success") && (boolean) ((LinkedTreeMap) data).get("Success");
+    public boolean isSuccess(LinkedTreeMap<String, Object> data) {
+        return data != null && data.containsKey("Success") && (boolean) data.get("Success");
     }
 
     @Override
@@ -106,12 +106,19 @@ public class ClientInterface implements Runnable {
                         if (encoder != null) // Updates server's RSA key
                             this.server.setEncodingKey(encoder);
 
-                        if (scope != null)
+                        if (scope != null) {
                             // Do requested action or response
+                            LinkedTreeMap<String, Object> castedData = null;
+
+                            try {
+                                castedData = (LinkedTreeMap) data;
+                            } catch (Exception e) {
+                                // Ignore
+                            }
 
                             switch (scope) { // If needed to handle any action response
                                 case "Connection": {
-                                    if (isSuccess(data))
+                                    if (isSuccess(castedData))
                                         Main.printLogin();
                                     else
                                         Main.printRestart("Error while pairing with the server");
@@ -120,7 +127,7 @@ public class ClientInterface implements Runnable {
                                 }
 
                                 case "Login": {
-                                    if (isSuccess(data)){
+                                    if (isSuccess(castedData)) {
                                         Main.printSoloMessage("Logged in, loading..");
                                         this.sendMessage("Lobbies", null, true);
                                     } else
@@ -130,20 +137,19 @@ public class ClientInterface implements Runnable {
                                 }
 
                                 case "Ping": {// Check for action success
-                                    if (isSuccess(data))
+                                    if (isSuccess(castedData))
                                         ping_end = new Timestamp(System.currentTimeMillis());
 
                                     break;
                                 }
 
                                 case "Lobbies": {
-                                    if (isSuccess(data)) {
-                                        if (((LinkedTreeMap) data).containsKey("Public") && ((LinkedTreeMap) data).containsKey("Private"))
-                                            Main.printLobbies((LinkedTreeMap) ((LinkedTreeMap) data).get("Public"), (LinkedTreeMap) ((LinkedTreeMap) data).get("Private"));
+                                    if (isSuccess(castedData)) {
+                                        if (castedData.containsKey("Public") && castedData.containsKey("Private"))
+                                            Main.printLobbies((LinkedTreeMap) castedData.get("Public"), (LinkedTreeMap) castedData.get("Private"));
                                         else
                                             Main.printRestart("Error while loading lobbies");
-                                    }
-                                    else
+                                    } else
                                         Main.printRestart("Unable to load lobbies");
 
                                     break;
@@ -151,9 +157,13 @@ public class ClientInterface implements Runnable {
 
                                 // case "Create":
                                 case "Members": {
-                                    if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Name") && ((LinkedTreeMap) data).containsKey("Players") && ((LinkedTreeMap) data).containsKey("Host") && ((LinkedTreeMap) data).containsKey("Size"))
-                                        Main.printLobbyRoom((String) ((LinkedTreeMap) data).get("Name"), (ArrayList) ((LinkedTreeMap) data).get("Players"), (String) ((LinkedTreeMap) data).get("Host"), (Number) ((LinkedTreeMap) data).get("Size"));
-                                    else {
+                                    if (isSuccess(castedData) && castedData.containsKey("Name") && castedData.containsKey("Players") && castedData.containsKey("Host") && castedData.containsKey("Size") && castedData.containsKey("Pause")) {
+                                        Main.printLobbyRoom((String) castedData.get("Name"), (ArrayList) castedData.get("Players"), (String) castedData.get("Host"), (Number) castedData.get("Size"));
+                                        ArrayList<Object> list = new ArrayList<>(); // TODO: Review
+                                        list.add(castedData.containsKey("Pause"));
+
+                                        Main.printGame(scope, list);
+                                    } else {
                                         Main.printSoloMessage("Failed to load the lobby, loading lobbies list..");
                                         Thread.sleep(2000);
 
@@ -164,8 +174,8 @@ public class ClientInterface implements Runnable {
                                 }
 
                                 case "Join": {
-                                    if (isSuccess(data) && ((LinkedTreeMap) data).containsKey("Token")) // Save the new token to access the new lobby
-                                        ClientStorage.updateSetting("token", ((LinkedTreeMap) data).get("Token"), true);
+                                    if (isSuccess(castedData) && castedData.containsKey("Token")) // Save the new token to access the new lobby
+                                        ClientStorage.updateSetting("token", castedData.get("Token"), true);
                                     else {
                                         Main.printSoloMessage("Unable to join the lobby, loading lobbies list..");
                                         Thread.sleep(2000);
@@ -174,6 +184,44 @@ public class ClientInterface implements Runnable {
                                     }
 
                                     break;
+                                }
+
+                                case "Dice": {
+                                    if (isSuccess(castedData) && castedData.containsKey("Dice")) {
+                                        ArrayList<Object> list = new ArrayList<>();
+                                        list.add(castedData.get("Dice"));
+
+                                        Main.printGame(scope, list);
+                                    }
+                                }
+
+                                case "Pick": {
+                                    if (isSuccess(castedData) && castedData.containsKey("Dudo")) {
+                                        ArrayList<Object> list = new ArrayList<>();
+                                        list.add(castedData.get("Dudo"));
+
+                                        Main.printGame(scope, list);
+                                    }
+                                }
+
+                                case "Picked": {
+                                    if (isSuccess(castedData) && castedData.containsKey("Picks")) {
+                                        ArrayList<Object> list = new ArrayList<>();
+                                        list.add(castedData.get("Picks"));
+
+                                        Main.printGame(scope, list);
+                                    }
+                                }
+
+                                case "Dudo": {
+                                    if (isSuccess(castedData) && castedData.containsKey("Results") && castedData.containsKey("Victim") && castedData.containsKey("Verdict")) {
+                                        ArrayList<Object> list = new ArrayList<>();
+                                        list.add(castedData.get("Results"));
+                                        list.add(castedData.get("Victim"));
+                                        list.add(castedData.get("Verdict"));
+
+                                        Main.printGame(scope, list);
+                                    }
                                 }
 
                                 case "Shutdown": {
@@ -188,6 +236,7 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
                             }
+                        }
                     }
                 } catch (SocketException e) {
                     // Socket is closing, ignore.

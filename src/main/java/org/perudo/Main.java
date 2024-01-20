@@ -393,7 +393,7 @@ public class Main {
         console.drawOptionsMenu(menu);
     }
 
-    private static void printGame() {
+    public static void printGame(String scope, ArrayList<Object> data) {
 
     }
 }
