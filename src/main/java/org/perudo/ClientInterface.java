@@ -158,11 +158,10 @@ public class ClientInterface implements Runnable {
                                 // case "Create":
                                 case "Members": {
                                     if (isSuccess(castedData) && castedData.containsKey("Name") && castedData.containsKey("Players") && castedData.containsKey("Host") && castedData.containsKey("Size") && castedData.containsKey("Pause")) {
-                                        Main.printLobbyRoom((String) castedData.get("Name"), (ArrayList) castedData.get("Players"), (String) castedData.get("Host"), (Number) castedData.get("Size"));
-                                        ArrayList<Object> list = new ArrayList<>(); // TODO: Review
+                                        ArrayList<Object> list = new ArrayList<>();
                                         list.add(castedData.containsKey("Pause"));
 
-                                        Main.printGame(scope, list);
+                                        Main.printLobbyRoom((String) castedData.get("Name"), (ArrayList) castedData.get("Players"), (String) castedData.get("Host"), (Number) castedData.get("Size"), list);
                                     } else {
                                         Main.printSoloMessage("Failed to load the lobby, loading lobbies list..");
                                         Thread.sleep(2000);
@@ -186,6 +185,17 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
+                                case "Turn": {
+                                    if (isSuccess(castedData) && castedData.containsKey("User")) {
+                                        ArrayList<Object> list = new ArrayList<>();
+                                        list.add(castedData.get("User"));
+
+                                        Main.printGame(scope, list);
+                                    }
+
+                                    break;
+                                }
+
                                 case "Dice": {
                                     if (isSuccess(castedData) && castedData.containsKey("Dice")) {
                                         ArrayList<Object> list = new ArrayList<>();
@@ -193,15 +203,21 @@ public class ClientInterface implements Runnable {
 
                                         Main.printGame(scope, list);
                                     }
+
+                                    break;
                                 }
 
                                 case "Pick": {
-                                    if (isSuccess(castedData) && castedData.containsKey("Dudo")) {
+                                    if (isSuccess(castedData) && castedData.containsKey("Dudo") && castedData.containsKey("Amount") && castedData.containsKey("Value")) {
                                         ArrayList<Object> list = new ArrayList<>();
                                         list.add(castedData.get("Dudo"));
+                                        list.add(castedData.containsKey("Amount"));
+                                        list.add(castedData.containsKey("Value"));
 
                                         Main.printGame(scope, list);
                                     }
+
+                                    break;
                                 }
 
                                 case "Picked": {
@@ -211,6 +227,8 @@ public class ClientInterface implements Runnable {
 
                                         Main.printGame(scope, list);
                                     }
+
+                                    break;
                                 }
 
                                 case "Dudo": {
@@ -222,6 +240,8 @@ public class ClientInterface implements Runnable {
 
                                         Main.printGame(scope, list);
                                     }
+
+                                    break;
                                 }
 
                                 case "Shutdown": {

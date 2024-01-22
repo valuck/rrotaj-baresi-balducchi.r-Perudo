@@ -1,10 +1,12 @@
 package org.perudo;
 
+import Messaging.User;
 import Storage.ClientStorage;
 import Storage.ServerStorage;
 import UserInterface.CustomConsole;
 import UserInterface.OptionsMenu;
 import com.google.gson.internal.LinkedTreeMap;
+import com.google.protobuf.StringValue;
 
 import java.util.ArrayList;
 
@@ -371,13 +373,37 @@ public class Main {
         console.drawOptionsMenu(menu);
     }
 
-    public static void printLobbyRoom(String name, ArrayList<String> players, String host, Number size) {
+    private static ArrayList<String> players;
+    private static boolean started;
+    private static String picked;
+    private static String lobby;
+    private static String host;
+    private static String dice;
+    private static String turn;
+    private static int size;
+
+    private static void printPlayers(ArrayList<String> players) {
+        players.forEach((value) -> console.println(value));
+        console.println("------------------");
+    }
+
+    public static void printLobbyRoom(String name, ArrayList<String> players, String host, Number size, ArrayList<Object> list) {
+        Main.size = size.intValue();
+        Main.players = players;
+        Main.lobby = name;
+        Main.host = host;
+
+        if (started) {
+            printGame("Members", list);
+            return;
+        }
+
         console.clear();
         console.println(STR."\{name} (\{players.size()}/\{size.intValue()})");
 
-        players.forEach((value) -> console.println(value));
-
+        printPlayers(players);
         console.println("------------------");
+
         OptionsMenu menu = new OptionsMenu();
         menu.addOption("Leave lobby", _ -> {
             currentClient.sendMessage("Lobbies", null, true);
@@ -393,7 +419,132 @@ public class Main {
         console.drawOptionsMenu(menu);
     }
 
-    public static void printGame(String scope, ArrayList<Object> data) {
+    private static void sendChoice(Integer amount, Integer value) {
+        console.clear();
+        console.println("Pick sent, waiting..");
 
+        LinkedTreeMap<String, Object> values = new LinkedTreeMap<>();
+        values.put("Amount", amount);
+        values.put("Value", amount);
+
+        currentClient.sendMessage("Choice", values, true);
+    }
+
+    private static int incrementAmount(int startValue) {
+        console.clear();
+        console.println("Set amount to:");
+
+        int val = -1;
+        while (val <= startValue || val > 6) {
+            try {
+                val = Integer.parseInt(console.readln());
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        return val;
+    }
+
+    private static void incrementValue(int startValue, int amount) {
+        OptionsMenu menu = new OptionsMenu();
+        console.clear();
+        console.println("Set value to:");
+
+        for (int i=startValue; i<6; i++) {
+            int finalI = i;
+            menu.addOption(String.valueOf(finalI), (_) -> {
+                sendChoice(amount, finalI);
+                return null;
+            });
+        }
+
+        console.drawOptionsMenu(menu);
+    }
+
+    public static void printGame(String scope, ArrayList<Object> data) {
+        started = true;
+
+        console.clear();
+        printPlayers(players);
+        console.println("------------------");
+        OptionsMenu menu = new OptionsMenu();
+
+        switch (scope) {
+            case "Dice": {
+                Main.dice = (String) data.get(0);
+                break;
+            }
+
+            case "Dudo": {
+                console.println("Results:");
+                ((ArrayList) data.get(0)).forEach((value) -> {
+                    console.println((String) value);
+                });
+
+                console.println(" ");
+                console.println((String) data.get(2));
+                console.println((String) data.get(1));
+                return;
+            }
+
+            case "Turn": {
+                Main.turn = (String) data.get(0);
+            }
+
+            case "Pick": {
+                console.println("Your turn!");
+                int startAmount = ((Number) data.get(1)).intValue();
+                int startValue = ((Number) data.get(2)).intValue();
+
+                if ((boolean) data.get(0)) {
+                    menu.addOption("Increment amount", (_) -> {
+                        sendChoice(incrementAmount(startAmount), 0);
+                        return null;
+                    });
+
+                    menu.addOption("Increment value", (_) -> {
+                        incrementValue(startValue, 0);
+                        return null;
+                    });
+
+                    menu.addOption("Say dudo!", (_) -> {
+
+                        return null;
+                    });
+                }
+                else {
+                    int amount = incrementAmount(startAmount);
+                    incrementValue(startValue, amount);
+                }
+
+                console.drawOptionsMenu(menu);
+                return;
+            }
+
+            case "Picked": {
+                console.println("The other");
+                Main.picked = (String) data.get(0);
+                break;
+            }
+
+            case "Members": {
+                // Nothing atm
+
+                break;
+            }
+        }
+
+        console.println("Your dice:");
+        console.println((String) data.get(0));
+        console.println("------------------");
+
+        console.println(STR."It's \{Main.turn} turn!");
+        menu.addOption("Say sock!", (_) -> {
+
+            return null;
+        });
+
+        console.drawOptionsMenu(menu);
     }
 }

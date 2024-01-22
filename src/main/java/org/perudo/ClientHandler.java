@@ -159,12 +159,13 @@ public class ClientHandler implements Runnable {
                                         break;
                                     }
 
-                                    if (data == null || !((LinkedTreeMap) data).containsKey("Lobby")) { // Data is required
+                                    LinkedTreeMap<String, Object> casted = (LinkedTreeMap) data;
+                                    if (data == null || !casted.containsKey("Lobby")) { // Data is required
                                         newData.put("Error", "Missing data");
                                         break;
                                     }
 
-                                    Game lobby = Game.getByLobbyId(Integer.parseInt((String) ((LinkedTreeMap) data).get("Lobby")));
+                                    Game lobby = Game.getByLobbyId(Integer.parseInt((String) casted.get("Lobby")));
                                     if (lobby != null) {
                                         for (User player : lobby.getPlayers()) {// Check if another player is using the same name
                                             if (player.getUsername().equals(user.getUsername())) {
@@ -173,7 +174,7 @@ public class ClientHandler implements Runnable {
                                             }
                                         }
 
-                                        String token = lobby.join(user, (String) ((LinkedTreeMap) data).get("Password"));
+                                        String token = lobby.join(user, (String) casted.get("Password"));
 
                                         if (token == null)
                                             newData.put("Error", "Not authorized to join");
@@ -202,6 +203,22 @@ public class ClientHandler implements Runnable {
 
                                     lobby.startGame();
                                     newData.put("Success", true);
+                                    break;
+                                }
+
+                                case "Choice": {
+                                    Game lobby = user.getLobby();
+                                    if (lobby == null) {
+                                        newData.put("Error", "Not in a lobby");
+                                        return;
+                                    }
+
+                                    LinkedTreeMap<String, Object> casted = (LinkedTreeMap) data;
+                                    if (casted.containsKey("Amount") && casted.containsKey("Value"))
+                                        newData.put("Success", lobby.processPicks(user, ((Number) casted.get("Amount")).intValue(), ((Number) casted.get("Value")).intValue()));
+                                    else
+                                        newData.put("Error", "Missing data");
+
                                     break;
                                 }
 
