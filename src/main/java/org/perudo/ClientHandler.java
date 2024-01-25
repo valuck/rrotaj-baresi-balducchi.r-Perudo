@@ -96,7 +96,7 @@ public class ClientHandler implements Runnable {
                                     String missing = "Missing:";
 
                                     if (info.containsKey("Username")) // Set the username or set error
-                                        user.setUsername(info.get("Username"));
+                                        user.setUsername(info.get("Username").trim());
                                     else
                                         missing = STR."\{missing} Username: String";
 
@@ -148,7 +148,8 @@ public class ClientHandler implements Runnable {
                                     if (((LinkedTreeMap) data).containsKey("Password"))
                                         password = (String) ((LinkedTreeMap) data).get("Password");
 
-                                    new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), user, password);
+                                    Game lobby = new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), user, password);
+                                    lobby.membersUpdated(false);
                                     newData.put("Success", true);
                                     break;
                                 }
@@ -167,12 +168,17 @@ public class ClientHandler implements Runnable {
 
                                     Game lobby = Game.getByLobbyId(Integer.parseInt((String) casted.get("Lobby")));
                                     if (lobby != null) {
-                                        for (User player : lobby.getPlayers()) {// Check if another player is using the same name
-                                            if (player.getUsername().equals(user.getUsername())) {
+                                        boolean flagged = false;
+                                        for (User player : lobby.getPlayers()) { // Check if another player is using the same name
+                                            if (player.getUsername().equalsIgnoreCase(user.getUsername())) {
                                                 newData.put("Error", "Username already in use in this lobby");
+                                                flagged = true;
                                                 break;
                                             }
                                         }
+
+                                        if (flagged)
+                                            break;
 
                                         String token = lobby.join(user, (String) casted.get("Password"));
 

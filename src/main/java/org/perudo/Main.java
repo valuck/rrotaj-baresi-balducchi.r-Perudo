@@ -11,9 +11,17 @@ import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 
 public class Main {
-    private static CustomConsole console;
-    private static String currentUsername;
     private static ClientInterface currentClient;
+    private static ArrayList<String> players;
+    private static String currentUsername;
+    private static CustomConsole console;
+    private static boolean started;
+    private static String picked;
+    private static String lobby;
+    private static String host;
+    private static String dice;
+    private static String turn;
+    private static int size;
 
     public static void main(String[] args) {
         // System.setProperty("log4j.configurationFile", String.valueOf(new File("resources", "log4j.xml").toURI()));
@@ -28,6 +36,10 @@ public class Main {
         new Thread(client).start();
 
         client.sendMessage("Create", 4, true);*/
+    }
+
+    public static String getUsername() {
+        return currentUsername;
     }
 
     private static void startServer() {
@@ -100,7 +112,7 @@ public class Main {
         // Send login message to the server
         LinkedTreeMap<String, String> data = new LinkedTreeMap<>();
         data.put("Username", username);
-        data.put("LastToken", (String) ClientStorage.getSetting("token"));
+        data.put("LastToken", (String) ClientStorage.getSetting(STR."\{currentUsername.toLowerCase()}-token"));
 
         currentClient.sendMessage("Login", data, true);
     }
@@ -373,15 +385,6 @@ public class Main {
         console.drawOptionsMenu(menu);
     }
 
-    private static ArrayList<String> players;
-    private static boolean started;
-    private static String picked;
-    private static String lobby;
-    private static String host;
-    private static String dice;
-    private static String turn;
-    private static int size;
-
     private static void printPlayers(ArrayList<String> players) {
         players.forEach((value) -> console.println(value));
         console.println("------------------");
@@ -402,8 +405,6 @@ public class Main {
         console.println(STR."\{name} (\{players.size()}/\{size.intValue()})");
 
         printPlayers(players);
-        console.println("------------------");
-
         OptionsMenu menu = new OptionsMenu();
         menu.addOption("Leave lobby", _ -> {
             currentClient.sendMessage("Lobbies", null, true);
@@ -467,7 +468,6 @@ public class Main {
 
         console.clear();
         printPlayers(players);
-        console.println("------------------");
         OptionsMenu menu = new OptionsMenu();
 
         switch (scope) {

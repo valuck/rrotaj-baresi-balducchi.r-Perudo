@@ -16,7 +16,6 @@ public class Game {
     private static final LinkedTreeMap<Integer, Game> games = new LinkedTreeMap<>();
     private final LinkedList<User> disconnected = new LinkedList<>();
     private final LinkedList<User> players = new LinkedList<>();
-    private LinkedList<Integer> lastPicks = new LinkedList<>();
     private boolean lastPickState;
     private final String password;
     private final String name;
@@ -24,6 +23,8 @@ public class Game {
     private User lastPlayer;
     private boolean started;
     private final int size;
+    private int lastAmount;
+    private int lastValue;
     private boolean paused;
     private boolean used;
 
@@ -57,6 +58,7 @@ public class Game {
             user.setDice(ServerStorage.getDice(value));
 
             disconnected.add(user);
+            ServerStorage.removeToken(value);
         });
 
         games.put(this.lobbyId, this);
@@ -99,7 +101,7 @@ public class Game {
             return null;
 
         String token;
-        if (!this.started || this.players.size() + this.disconnected.size() >= this.size) { // If the lobby is full
+        if (this.started && this.players.size() + this.disconnected.size() >= this.size) { // If the lobby is full
             String tempToken = user.getCurrentToken();
             boolean found = false;
 
@@ -135,7 +137,7 @@ public class Game {
             this.paused = false;
 
         this.membersUpdated(this.paused);
-        if (this.getUserByShift() == user)
+        if (this.started && !this.paused && this.getUserByShift() == user)
             pickUpdate(user, this.lastPickState);
 
         return token;
@@ -162,8 +164,8 @@ public class Game {
         this.disconnected.clear();
 
         this.lastPlayer = null;
-        this.lastPicks.set(0, 1);
-        this.lastPicks.set(1, 1);
+        lastAmount = 1;
+        lastValue = 1;
 
         for (User player : this.players) {
             diceUpdate(player);
@@ -202,23 +204,21 @@ public class Game {
         }
         else {
             boolean am = amount > 0;
-            int oldAmount = lastPicks.get(0);
-            int oldValue = lastPicks.get(1);
 
-            amount = amount < oldAmount ? oldAmount + 1 : amount;
+            amount = amount < lastAmount ? lastAmount + 1 : amount;
 
-            if (oldValue >= 6)
+            if (lastValue >= 6)
                 value = 1;
             else if (value < 6)
-                value = value < oldValue ? oldValue + 1 : value;
+                value = value < lastValue ? lastValue + 1 : value;
 
             if (am) {
-                lastPicks.set(0, amount);
+                lastAmount = amount;
                 picked = STR."Amount: \{amount}";
             }
 
             if (!am || lastPlayer != null) {
-                lastPicks.set(1, value);
+                lastValue = value;
 
                 if (am)
                     picked = picked + ", ";
@@ -235,14 +235,16 @@ public class Game {
     }
 
     private User getUserByShift() {
-        int shift = ServerStorage.getLobbyShift(this.lobbyId);
+        int shift = ServerStorage.getLobbyShift(this.lobbyId) -1;
         LinkedList<String> tokens = ServerStorage.getTokensInLobby(this.lobbyId);
-
+        System.err.println(shift + " " + tokens.size());
         if (shift >= 0 && tokens.size() > shift) {
             String selected = tokens.get(shift);
+            System.err.println(selected);
 
             for (User player : this.players) {
                 if (player.getCurrentToken().equals(selected)) {
+                    System.err.println(player.getUsername());
                     return player;
                 }
             }
@@ -344,8 +346,8 @@ public class Game {
         LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
         replicatedData.put("Success", true);
         replicatedData.put("Dudo", canDudo);
-        replicatedData.put("Amount", lastPicks.get(0));
-        replicatedData.put("Value", lastPicks.get(1));
+        replicatedData.put("Amount", lastAmount);
+        replicatedData.put("Value", lastValue);
 
         player.getHandler().sendMessage("Pick", replicatedData, true);
         LinkedTreeMap<User, Boolean> blacklist = new LinkedTreeMap<>();
@@ -363,7 +365,7 @@ public class Game {
         StringBuilder results = new StringBuilder();
 
         for (Integer dice : player.shuffle()) {
-            results.append(dice.toString());
+            results.append(STR."\{dice.toString()} ");
         }
 
         replicatedData.put("Success", true);

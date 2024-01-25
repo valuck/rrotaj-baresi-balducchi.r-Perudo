@@ -50,9 +50,10 @@ public class ClientInterface implements Runnable {
                             // get ping event from here!
 
                             if (ping > 10000) { // if over 10 seconds
-                                logger.warn("Connection lost or ping too high");
+                                String message = "Connection lost or ping too high";
+                                logger.warn(message);
                                 // get connection lost event from here!
-
+                                Main.printRestart(message);
                                 close();
                                 break; // exits the loop
                             }
@@ -112,6 +113,9 @@ public class ClientInterface implements Runnable {
 
                             try {
                                 castedData = (LinkedTreeMap) data;
+                                if (!isSuccess(castedData) && castedData.containsKey("Error"))
+                                    logger.error((String) castedData.get("Error"));
+
                             } catch (Exception e) {
                                 // Ignore
                             }
@@ -155,7 +159,17 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                // case "Create":
+                                case "Create": {
+                                    if (!isSuccess(castedData)) {
+                                        Main.printSoloMessage("Failed to create the lobby, loading lobbies list..");
+                                        Thread.sleep(2000);
+
+                                        this.sendMessage("Lobbies", null, true);
+                                    }
+
+                                    break;
+                                }
+
                                 case "Members": {
                                     if (isSuccess(castedData) && castedData.containsKey("Name") && castedData.containsKey("Players") && castedData.containsKey("Host") && castedData.containsKey("Size") && castedData.containsKey("Pause")) {
                                         ArrayList<Object> list = new ArrayList<>();
@@ -174,7 +188,7 @@ public class ClientInterface implements Runnable {
 
                                 case "Join": {
                                     if (isSuccess(castedData) && castedData.containsKey("Token")) // Save the new token to access the new lobby
-                                        ClientStorage.updateSetting("token", castedData.get("Token"), true);
+                                        ClientStorage.updateSetting(STR."\{Main.getUsername().toLowerCase()}-token", castedData.get("Token"), true);
                                     else {
                                         Main.printSoloMessage("Unable to join the lobby, loading lobbies list..");
                                         Thread.sleep(2000);
