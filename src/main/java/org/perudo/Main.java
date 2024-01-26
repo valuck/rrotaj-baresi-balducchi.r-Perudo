@@ -452,7 +452,7 @@ public class Main {
         console.clear();
         console.println("Set value to:");
 
-        for (int i=startValue; i<6; i++) {
+        for (int i=startValue; i<=6; i++) {
             int finalI = i;
             menu.addOption(String.valueOf(finalI), (_) -> {
                 sendChoice(amount, finalI);
@@ -490,10 +490,11 @@ public class Main {
 
             case "Turn": {
                 Main.turn = (String) data.get(0);
+                break;
             }
 
             case "Pick": {
-                console.println("Your turn!");
+                Main.turn = "your";
                 int startAmount = ((Number) data.get(1)).intValue();
                 int startValue = ((Number) data.get(2)).intValue();
 
@@ -514,16 +515,17 @@ public class Main {
                     });
                 }
                 else {
-                    int amount = incrementAmount(startAmount);
-                    incrementValue(startValue, amount);
+                    menu.addOption("Insert values", (_) -> {
+                        int amount = incrementAmount(startAmount);
+                        incrementValue(startValue, amount);
+                        return null;
+                    });
                 }
 
-                console.drawOptionsMenu(menu);
-                return;
+                break;
             }
 
             case "Picked": {
-                console.println("The other");
                 Main.picked = (String) data.get(0);
                 break;
             }
@@ -536,7 +538,9 @@ public class Main {
         }
 
         console.println("Your dice:");
-        console.println((String) data.get(0));
+        console.println(Main.dice);
+        console.println("Last choice:");
+        console.println(Main.picked);
         console.println("------------------");
 
         console.println(STR."It's \{Main.turn} turn!");

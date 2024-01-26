@@ -163,6 +163,10 @@ public class Game {
         this.started = true;
         this.disconnected.clear();
 
+        this.startTurn();
+    }
+
+    private void startTurn() {
         this.lastPlayer = null;
         lastAmount = 1;
         lastValue = 1;
@@ -201,6 +205,15 @@ public class Game {
 
             lastPlayer = null;
             picked = "Dudo!";
+
+            new Thread(() -> {
+                try {
+                    Thread.sleep(5000);
+                    startTurn();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
         }
         else {
             boolean am = amount > 0;
@@ -217,7 +230,7 @@ public class Game {
                 picked = STR."Amount: \{amount}";
             }
 
-            if (!am || lastPlayer != null) {
+            if (!am || lastPlayer != null) { // TODO: fix here
                 lastValue = value;
 
                 if (am)
@@ -230,21 +243,18 @@ public class Game {
         ServerStorage.incrementLobbyShift(this.lobbyId);
         lastPlayer = current;
 
-        startShift(itsDudo, picked);
+        startShift(!itsDudo, picked);
         return true;
     }
 
     private User getUserByShift() {
         int shift = ServerStorage.getLobbyShift(this.lobbyId) -1;
         LinkedList<String> tokens = ServerStorage.getTokensInLobby(this.lobbyId);
-        System.err.println(shift + " " + tokens.size());
         if (shift >= 0 && tokens.size() > shift) {
             String selected = tokens.get(shift);
-            System.err.println(selected);
 
             for (User player : this.players) {
                 if (player.getCurrentToken().equals(selected)) {
-                    System.err.println(player.getUsername());
                     return player;
                 }
             }
@@ -268,8 +278,8 @@ public class Game {
         replicatedData.put("Success", true);
         replicatedData.put("Picks", picked);
         
-        replicateMessage("Picked", replicatedData, true);
-        startShift(canDudo);
+        this.replicateMessage("Picked", replicatedData, true);
+        this.startShift(canDudo);
     }
 
     public static Game getByLobbyId(int lobbyId) {
@@ -279,13 +289,13 @@ public class Game {
         return null;
     }
 
-    public void replicateMessage(String scope, Object data, boolean encode, LinkedTreeMap<User, Boolean> blacklist) { // Sends the message to all lobby members
+    public void replicateMessage(String scope, Object data, boolean encode, LinkedTreeMap<String, Boolean> blacklist) { // Sends the message to all lobby members
         LinkedList<User> users = this.players;
 
         // Send a new message to all the connected users
         for (int i = 0; i < users.size(); i++) { // foreach loops can give an error
             User user = users.get(i);
-            if (blacklist.containsKey(user))
+            if (blacklist.containsKey(user.getCurrentToken()))
                 continue;
             
             ClientHandler handler = user.getHandler();
@@ -350,8 +360,8 @@ public class Game {
         replicatedData.put("Value", lastValue);
 
         player.getHandler().sendMessage("Pick", replicatedData, true);
-        LinkedTreeMap<User, Boolean> blacklist = new LinkedTreeMap<>();
-        blacklist.put(player, true);
+        LinkedTreeMap<String, Boolean> blacklist = new LinkedTreeMap<>();
+        blacklist.put(player.getCurrentToken(), true);
 
         replicatedData.clear();
         replicatedData.put("Success", true);

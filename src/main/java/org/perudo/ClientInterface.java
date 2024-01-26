@@ -225,8 +225,8 @@ public class ClientInterface implements Runnable {
                                     if (isSuccess(castedData) && castedData.containsKey("Dudo") && castedData.containsKey("Amount") && castedData.containsKey("Value")) {
                                         ArrayList<Object> list = new ArrayList<>();
                                         list.add(castedData.get("Dudo"));
-                                        list.add(castedData.containsKey("Amount"));
-                                        list.add(castedData.containsKey("Value"));
+                                        list.add(castedData.get("Amount"));
+                                        list.add(castedData.get("Value"));
 
                                         Main.printGame(scope, list);
                                     }
