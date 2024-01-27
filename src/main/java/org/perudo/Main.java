@@ -17,6 +17,8 @@ public class Main {
     private static CustomConsole console;
     private static boolean started;
     private static String picked;
+    private static boolean sock;
+    private static long ping = 0;
     private static String lobby;
     private static String host;
     private static String dice;
@@ -44,6 +46,10 @@ public class Main {
 
     private static void startServer() {
         printPort(null, true);
+    }
+
+    public static void setPing(long ping) {
+        Main.ping = ping;
     }
 
     private static void starClient() {
@@ -402,6 +408,7 @@ public class Main {
         }
 
         console.clear();
+        console.println(STR."\{ping}ms");
         console.println(STR."\{name} (\{players.size()}/\{size.intValue()})");
 
         printPlayers(players);
@@ -433,6 +440,9 @@ public class Main {
 
     private static int incrementAmount(int startValue) {
         console.clear();
+        console.println("Your dice:");
+        console.println(Main.dice);
+        console.println("------------------");
         console.println("Set amount to:");
 
         int val = -1;
@@ -450,11 +460,14 @@ public class Main {
     private static void incrementValue(int startValue, int amount) {
         OptionsMenu menu = new OptionsMenu();
         console.clear();
+        console.println("Your dice:");
+        console.println(Main.dice);
+        console.println("------------------");
         console.println("Set value to:");
 
         for (int i=startValue; i<=6; i++) {
             int finalI = i;
-            menu.addOption(String.valueOf(finalI), (_) -> {
+            menu.addOption(String.valueOf(STR."\{finalI}\{i==1 ? " (jolly)" : ""}"), (_) -> {
                 sendChoice(amount, finalI);
                 return null;
             });
@@ -465,6 +478,7 @@ public class Main {
 
     public static void printGame(String scope, ArrayList<Object> data) {
         started = true;
+        console.println(STR."\{ping}ms");
 
         console.clear();
         printPlayers(players);
@@ -510,7 +524,9 @@ public class Main {
                     });
 
                     menu.addOption("Say dudo!", (_) -> {
-
+                        console.clear();
+                        console.println("Sending dudo..");
+                        currentClient.sendMessage("Dudo", null, true);
                         return null;
                     });
                 }
@@ -535,6 +551,10 @@ public class Main {
 
                 break;
             }
+
+            case "Sock": {
+                sock = (Boolean) data.get(0);
+            }
         }
 
         console.println("Your dice:");
@@ -544,10 +564,12 @@ public class Main {
         console.println("------------------");
 
         console.println(STR."It's \{Main.turn} turn!");
-        menu.addOption("Say sock!", (_) -> {
 
-            return null;
-        });
+        if (sock)
+            menu.addOption("Say sock!", (_) -> {
+
+                return null;
+            });
 
         console.drawOptionsMenu(menu);
     }

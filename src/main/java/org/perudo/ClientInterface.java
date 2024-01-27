@@ -46,8 +46,9 @@ public class ClientInterface implements Runnable {
                     if (server.getEncodingKey() != null) { // if connection is initialized
                         if (ping_end != null) {
                             long ping = Math.abs(ping_end.getTime() - ping_start.getTime()); // calculate ping
-                            System.out.println(STR."\{ping}ms");
+                            // System.out.println(STR."\{ping}ms");
                             // get ping event from here!
+                            Main.setPing(ping);
 
                             if (ping > 10000) { // if over 10 seconds
                                 String message = "Connection lost or ping too high";
@@ -238,6 +239,17 @@ public class ClientInterface implements Runnable {
                                     if (isSuccess(castedData) && castedData.containsKey("Picks")) {
                                         ArrayList<Object> list = new ArrayList<>();
                                         list.add(castedData.get("Picks"));
+
+                                        Main.printGame(scope, list);
+                                    }
+
+                                    break;
+                                }
+
+                                case "Sock": {
+                                    if (isSuccess(castedData) && castedData.containsKey("Sock")) {
+                                        ArrayList<Object> list = new ArrayList<>();
+                                        list.add(castedData.get("Sock"));
 
                                         Main.printGame(scope, list);
                                     }

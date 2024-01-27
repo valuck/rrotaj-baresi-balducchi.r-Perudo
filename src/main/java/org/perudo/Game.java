@@ -160,6 +160,9 @@ public class Game {
     }
 
     public void startGame() {
+        if (this.started)
+            return;
+
         this.started = true;
         this.disconnected.clear();
 
@@ -225,23 +228,17 @@ public class Game {
             else if (value < 6)
                 value = value < lastValue ? lastValue + 1 : value;
 
-            if (am) {
+            if (am)
                 lastAmount = amount;
-                picked = STR."Amount: \{amount}";
-            }
 
-            if (!am || lastPlayer != null) { // TODO: fix here
+            if (!am || lastPlayer != null)
                 lastValue = value;
 
-                if (am)
-                    picked = picked + ", ";
-
-                picked = picked + STR."Value: \{value}";
-            }
+            picked = picked + STR."Amount: \{amount}, Value: \{value}";
         }
 
         ServerStorage.incrementLobbyShift(this.lobbyId);
-        lastPlayer = current;
+        this.lastPlayer = current;
 
         startShift(!itsDudo, picked);
         return true;
@@ -269,8 +266,25 @@ public class Game {
         User player = getUserByShift();
         this.lastPickState = canDudo;
 
-        if (player != null)
+        if (player != null) {
+            LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+            LinkedTreeMap<String, Boolean> blacklist = new LinkedTreeMap<>();
+
+            data.put("Success", true);
+            data.put("Sock", true);
+
+            blacklist.put(player.getCurrentToken(), true);
+            this.replicateMessage("Sock", data, true, blacklist);
+            data.replace("Sock", false);
+
+            if (this.lastPlayer != null) {
+                blacklist.put(this.lastPlayer.getCurrentToken(), true);
+                this.lastPlayer.getHandler().sendMessage("Sock", data, true);
+            }
+
+            player.getHandler().sendMessage("Sock", data, true);
             pickUpdate(player, canDudo);
+        }
     }
 
     private void startShift(boolean canDudo, String picked) {
