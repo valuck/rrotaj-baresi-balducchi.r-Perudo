@@ -166,19 +166,18 @@ public class Game {
         this.started = true;
         this.disconnected.clear();
 
-        this.startTurn();
+        this.setupTurn();
+        this.startShift(false);
     }
 
-    private void startTurn() {
+    private void setupTurn() {
         this.lastPlayer = null;
-        lastAmount = 1;
-        lastValue = 1;
+        lastAmount = 0;
+        lastValue = 0;
 
         for (User player : this.players) {
             diceUpdate(player);
         }
-
-        startShift(false);
     }
 
     public boolean processPicks(User player, int amount, int value) {
@@ -195,10 +194,12 @@ public class Game {
 
             for (User plr : players)
                 for (int dice : plr.getLastShuffle())
-                    if (dice == value || dice == 1)
+                    if (dice == lastValue || dice == 1)
                         correct++;
 
-            if (correct >= amount) {
+            System.err.println(player.getUsername() + " " + lastPlayer.getUsername());
+
+            if (correct >= lastAmount) {
                 ServerStorage.incrementDice(player.getCurrentToken(), -1);
                 this.dudoUpdate(false, player);
             } else {
@@ -206,17 +207,12 @@ public class Game {
                 this.dudoUpdate(true, lastPlayer);
             }
 
-            lastPlayer = null;
-            picked = "Dudo!";
-
-            new Thread(() -> {
-                try {
-                    Thread.sleep(5000);
-                    startTurn();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }).start();
+            try {
+                Thread.sleep(5000);
+                setupTurn();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
         else {
             boolean am = amount > 0;
@@ -339,6 +335,7 @@ public class Game {
             replicatedData.put("Success", true);
             replicatedData.put("Players", plrs);
             replicatedData.put("Name", getName());
+            replicatedData.put("Started", this.started);
             replicatedData.put("Host", currentHost.getUsername());
 
             replicateMessage("Members", replicatedData, true);

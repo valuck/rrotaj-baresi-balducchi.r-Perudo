@@ -15,7 +15,6 @@ public class Main {
     private static ArrayList<String> players;
     private static String currentUsername;
     private static CustomConsole console;
-    private static boolean started;
     private static String picked;
     private static boolean sock;
     private static long ping = 0;
@@ -402,7 +401,7 @@ public class Main {
         Main.lobby = name;
         Main.host = host;
 
-        if (started) {
+        if ((boolean) list.get(1)) {
             printGame("Members", list);
             return;
         }
@@ -438,11 +437,17 @@ public class Main {
         currentClient.sendMessage("Choice", values, true);
     }
 
-    private static int incrementAmount(int startValue) {
-        console.clear();
+    private static void printStats() {
         console.println("Your dice:");
         console.println(Main.dice);
+        console.println("Last choice:");
+        console.println(Main.picked);
         console.println("------------------");
+    }
+
+    private static int incrementAmount(int startValue) {
+        console.clear();
+        printStats();
         console.println("Set amount to:");
 
         int val = -1;
@@ -460,12 +465,10 @@ public class Main {
     private static void incrementValue(int startValue, int amount) {
         OptionsMenu menu = new OptionsMenu();
         console.clear();
-        console.println("Your dice:");
-        console.println(Main.dice);
-        console.println("------------------");
-        console.println("Set value to:");
+        printStats();
 
-        for (int i=startValue; i<=6; i++) {
+        console.println("Set value to:");
+        for (int i=startValue+1; i<=6; i++) {
             int finalI = i;
             menu.addOption(String.valueOf(STR."\{finalI}\{i==1 ? " (jolly)" : ""}"), (_) -> {
                 sendChoice(amount, finalI);
@@ -477,10 +480,9 @@ public class Main {
     }
 
     public static void printGame(String scope, ArrayList<Object> data) {
-        started = true;
+        console.clear();
         console.println(STR."\{ping}ms");
 
-        console.clear();
         printPlayers(players);
         OptionsMenu menu = new OptionsMenu();
 
@@ -547,7 +549,10 @@ public class Main {
             }
 
             case "Members": {
-                // Nothing atm
+                if ((boolean) data.get(0)) {
+                    console.println("Waiting for players to reconnect..");
+                    return;
+                }
 
                 break;
             }
@@ -557,12 +562,7 @@ public class Main {
             }
         }
 
-        console.println("Your dice:");
-        console.println(Main.dice);
-        console.println("Last choice:");
-        console.println(Main.picked);
-        console.println("------------------");
-
+        printStats();
         console.println(STR."It's \{Main.turn} turn!");
 
         if (sock)

@@ -172,9 +172,10 @@ public class ClientInterface implements Runnable {
                                 }
 
                                 case "Members": {
-                                    if (isSuccess(castedData) && castedData.containsKey("Name") && castedData.containsKey("Players") && castedData.containsKey("Host") && castedData.containsKey("Size") && castedData.containsKey("Pause")) {
+                                    if (isSuccess(castedData) && castedData.containsKey("Name") && castedData.containsKey("Players") && castedData.containsKey("Host") && castedData.containsKey("Size") && castedData.containsKey("Started") && castedData.containsKey("Pause")) {
                                         ArrayList<Object> list = new ArrayList<>();
-                                        list.add(castedData.containsKey("Pause"));
+                                        list.add(castedData.get("Pause"));
+                                        list.add(castedData.get("Started"));
 
                                         Main.printLobbyRoom((String) castedData.get("Name"), (ArrayList) castedData.get("Players"), (String) castedData.get("Host"), (Number) castedData.get("Size"), list);
                                     } else {
