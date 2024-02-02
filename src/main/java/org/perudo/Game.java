@@ -119,6 +119,13 @@ public class Game {
 
             if (found) {
                 token = tempToken;
+
+                new Thread(() -> { // Send all the data required
+                    diceUpdate(user);
+
+                    // TODO: player turn, last choice
+                    // wrong input on amount and value
+                }).start();
             } else
                 return null;
         }
