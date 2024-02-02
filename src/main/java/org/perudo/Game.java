@@ -121,10 +121,21 @@ public class Game {
                 token = tempToken;
 
                 new Thread(() -> { // Send all the data required
-                    diceUpdate(user);
+                    ClientHandler handler = user.getHandler();
 
-                    // TODO: player turn, last choice
-                    // wrong input on amount and value
+                    if (handler != null) {
+                        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+                        replicatedData.put("Success", true);
+                        diceUpdate(user);
+
+                        replicatedData.put("Picks", STR."Amount: \{lastAmount}, Value: \{lastValue}");
+                        handler.sendMessage("Picked", replicatedData, true);
+                        replicatedData.remove("Picked");
+
+                        replicatedData.put("User", lastPlayer.getUsername());
+                        handler.sendMessage("Turn", replicatedData, true);
+                        replicatedData.remove("User");
+                    }
                 }).start();
             } else
                 return null;
@@ -237,7 +248,7 @@ public class Game {
             if (!am || lastPlayer != null)
                 lastValue = value;
 
-            picked = picked + STR."Amount: \{amount}, Value: \{value}";
+            picked = picked + STR."Amount: \{lastAmount}, Value: \{lastValue}";
         }
 
         ServerStorage.incrementLobbyShift(this.lobbyId);

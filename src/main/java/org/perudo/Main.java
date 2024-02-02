@@ -505,7 +505,8 @@ public class Main {
             }
 
             case "Turn": {
-                Main.turn = (String) data.get(0);
+                String name = (String) data.get(0);
+                Main.turn = name.equals(currentUsername) ? "your" : name;
                 break;
             }
 
