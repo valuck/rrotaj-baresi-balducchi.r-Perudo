@@ -14,6 +14,7 @@ public class Game {
     private static final Logger logger = LogManager.getLogger(Game.class);
 
     private static final LinkedTreeMap<Integer, Game> games = new LinkedTreeMap<>();
+    private final LinkedTreeMap<User, Boolean> finished = new LinkedTreeMap<>();
     private final LinkedList<User> disconnected = new LinkedList<>();
     private final LinkedList<User> players = new LinkedList<>();
     private boolean lastPickState;
@@ -215,8 +216,6 @@ public class Game {
                     if (dice == lastValue || dice == 1)
                         correct++;
 
-            System.err.println(player.getUsername() + " " + lastPlayer.getUsername());
-
             if (correct >= lastAmount) {
                 ServerStorage.incrementDice(player.getCurrentToken(), -1);
                 this.dudoUpdate(false, player);
@@ -279,7 +278,37 @@ public class Game {
         User player = getUserByShift();
         this.lastPickState = canDudo;
 
-        if (player != null) {
+        if (player == null || ServerStorage.getDice(player.getCurrentToken()) <= 0) {
+            if (player != null) {
+                finished.put(player, true);
+
+                if (finished.size() >= this.size -1) {
+                    LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+                    data.put("Success", true);
+                    data.put("User", player.getUsername());
+
+                    this.replicateMessage("Winner", data, true);
+
+                    try {
+                        Thread.sleep(5000);
+
+                        User host = this.players.getFirst();
+                        Game newLobby = new Game(this.size, host, this.password);
+                        this.players.forEach((plr) -> {
+                            if (plr != host)
+                                newLobby.join(plr, password);
+                        });
+
+                        this.remove();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            startShift(canDudo);
+            return;
+        } else {
             LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
             LinkedTreeMap<String, Boolean> blacklist = new LinkedTreeMap<>();
 

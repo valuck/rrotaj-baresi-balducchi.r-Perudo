@@ -271,6 +271,13 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
+                                case "Winner": {
+                                    if (isSuccess(castedData) && castedData.containsKey("User"))
+                                        Main.printWinner((String) castedData.get("User"));
+
+                                    break;
+                                }
+
                                 case "Shutdown": {
                                     if (data != null) {
                                         logger.warn((String) data);

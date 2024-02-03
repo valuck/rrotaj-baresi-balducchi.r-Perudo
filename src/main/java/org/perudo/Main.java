@@ -445,13 +445,17 @@ public class Main {
         console.println("------------------");
     }
 
+    public static void printWinner(String username) {
+        console.println(STR."\{username} won the game!");
+    }
+
     private static int incrementAmount(int startValue) {
         console.clear();
         printStats();
         console.println("Set amount to:");
 
         int val = -1;
-        while (val <= startValue || val > 6) {
+        while (val <= startValue) {
             try {
                 val = Integer.parseInt(console.readln());
             } catch (Exception e) {
