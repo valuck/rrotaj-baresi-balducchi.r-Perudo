@@ -245,15 +245,14 @@ public class Game {
             if (am)
                 lastAmount = amount;
 
-            if (!am || lastPlayer != null)
+            if (!am || lastPlayer == null)
                 lastValue = value;
 
             picked = picked + STR."Amount: \{lastAmount}, Value: \{lastValue}";
+            this.lastPlayer = current;
         }
 
         ServerStorage.incrementLobbyShift(this.lobbyId);
-        this.lastPlayer = current;
-
         startShift(!itsDudo, picked);
         return true;
     }
@@ -288,6 +287,9 @@ public class Game {
             data.put("Sock", true);
 
             blacklist.put(player.getCurrentToken(), true);
+            if (this.lastPlayer != null)
+                blacklist.put(this.lastPlayer.getCurrentToken(), true);
+
             this.replicateMessage("Sock", data, true, blacklist);
             data.replace("Sock", false);
 
