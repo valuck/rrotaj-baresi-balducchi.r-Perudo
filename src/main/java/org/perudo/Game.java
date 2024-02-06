@@ -3,6 +3,7 @@ package org.perudo;
 import Messaging.User;
 import Storage.ServerStorage;
 import com.google.gson.internal.LinkedTreeMap;
+import com.sun.jdi.connect.spi.TransportService;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import org.apache.logging.log4j.LogManager;
@@ -222,26 +223,36 @@ public class Game {
     public boolean processPicks(User player, int amount, int value) {
         User current = getUserByShift();
 
-        if (player == null || player != current)
+        boolean itsSock = value >= 8;
+        if (!itsSock && (player == null || player != current))
             return false;
 
-        boolean itsDudo = value >= 7 && lastPlayer != null;
+        boolean itsDudo = value == 7 && this.lastPlayer != null;
         String picked = "";
 
-        if (itsDudo) { // its dudo!
+        if (itsSock || itsDudo) { // its dudo!
+            sockUpdate(false);
             int correct = 0;
 
-            for (User plr : players)
+            for (User plr : this.players)
                 for (int dice : plr.getLastShuffle())
-                    if (dice == lastValue || dice == 1)
+                    if (dice == this.lastValue || dice == 1)
                         correct++;
 
-            if (correct >= lastAmount) {
+            User victim = player;
+            if ((itsSock && correct == this.lastAmount) || (itsDudo && correct >= this.lastAmount)) {
                 ServerStorage.incrementDice(player.getCurrentToken(), -1);
-                this.dudoUpdate(false, player);
+                this.dudoUpdate(false, player, itsSock);
             } else {
-                ServerStorage.incrementDice(lastPlayer.getCurrentToken(), -1);
-                this.dudoUpdate(true, lastPlayer);
+                ServerStorage.incrementDice(this.lastPlayer.getCurrentToken(), -1);
+                this.dudoUpdate(true, this.lastPlayer, itsSock);
+                victim = this.lastPlayer;
+            }
+
+            if (ServerStorage.getDice(victim.getCurrentToken()) <= 0) {
+                this.finished.putIfAbsent(player.getCurrentToken(), true);
+                if (checkWin(victim))
+                    return true;
             }
 
             try {
@@ -253,21 +264,20 @@ public class Game {
         }
         else {
             boolean am = amount > 0;
+            amount = amount < this.lastAmount ? this.lastAmount + 1 : amount;
 
-            amount = amount < lastAmount ? lastAmount + 1 : amount;
-
-            if (lastValue >= 6)
+            if (this.lastValue >= 6)
                 value = 1;
             else if (value < 6)
-                value = value < lastValue ? lastValue + 1 : value;
+                value = value < this.lastValue ? this.lastValue + 1 : value;
 
             if (am)
-                lastAmount = amount;
+                this.lastAmount = amount;
 
-            if (!am || lastPlayer == null)
-                lastValue = value;
+            if (!am || this.lastPlayer == null)
+                this.lastValue = value;
 
-            picked = picked + STR."Amount: \{lastAmount}, Value: \{lastValue == 1 ? "J" : lastValue}";
+            picked = picked + STR."Amount: \{this.lastAmount}, Value: \{this.lastValue == 1 ? "J" : this.lastValue}";
             this.lastPlayer = current;
         }
 
@@ -300,59 +310,15 @@ public class Game {
 
         if (player == null || ServerStorage.getDice(player.getCurrentToken()) <= 0) {
             if (player != null) {
-                finished.putIfAbsent(player.getCurrentToken(), true);
-
-                if (finished.size() >= this.size -1) {
-                    LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
-                    data.put("Success", true);
-                    data.put("User", player.getUsername());
-
-                    this.replicateMessage("Winner", data, true);
-                    data.remove("User");
-
-                    try {
-                        Thread.sleep(5000);
-                        User host = getHost();
-                        Game newLobby = new Game(host, this.size, this.password);
-                        data.put("Token", false);
-
-                        this.players.forEach((plr) -> {
-                            if (plr != host) {
-                                data.replace("Token", newLobby.join(plr));
-                                ClientHandler handler = plr.getHandler();
-
-                                if (handler != null)
-                                    handler.sendMessage("Join", data, true);
-                            }
-                        });
-
-                        this.remove();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    return;
-                }
+                this.finished.putIfAbsent(player.getCurrentToken(), true);
+                checkWin(player);
             }
 
             ServerStorage.incrementLobbyShift(this.lobbyId);
-            startShift(canDudo);
+            this.startShift(canDudo);
             return;
         } else {
-            LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
-            LinkedTreeMap<String, Boolean> blacklist = new LinkedTreeMap<>();
-
-            data.put("Success", true);
-            data.put("Sock", true);
-
-            blacklist.put(player.getCurrentToken(), true);
-            if (this.lastPlayer != null)
-                blacklist.put(this.lastPlayer.getCurrentToken(), true);
-
-            this.replicateMessage("Sock", data, true, blacklist);
-            data.replace("Sock", false);
-
-            player.getHandler().sendMessage("Sock", data, true);
+            sockUpdate(true);
             pickUpdate(player, canDudo);
         }
     }
@@ -416,7 +382,7 @@ public class Game {
         }).start();
     }
 
-    private void dudoUpdate(boolean dudo, User plr) {
+    private void dudoUpdate(boolean dudo, User plr, boolean itsSock) {
         LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
         LinkedList<String> plrs = new LinkedList<>();
 
@@ -433,7 +399,7 @@ public class Game {
         replicatedData.put("Success", true);
         replicatedData.put("Results", plrs);
         replicatedData.put("Victim", STR."\{plr.getUsername()} lost a dice!");
-        replicatedData.put("Verdict", STR."Dudo was \{(dudo ? "right" : "wrong")}!");
+        replicatedData.put("Verdict", STR."\{itsSock ? "Sock" : "Dudo"} was \{(dudo ? "right" : "wrong")}!");
         replicateMessage("Dudo", replicatedData, true);
     }
 
@@ -466,6 +432,60 @@ public class Game {
         replicatedData.put("Success", true);
         replicatedData.put("Dice", results.toString());
         player.getHandler().sendMessage("Dice", replicatedData, true);
+    }
+
+    private void sockUpdate(boolean canSock) {
+        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+        replicatedData.put("Success", true);
+        replicatedData.put("Sock", canSock);
+
+        LinkedTreeMap<String, Boolean> blacklist = new LinkedTreeMap<>();
+        User current = this.getUserByShift();
+
+        if (current != null)
+            blacklist.put(current.getCurrentToken(), true);
+
+        if (this.lastPlayer != null)
+            blacklist.put(this.lastPlayer.getCurrentToken(), true);
+
+        this.replicateMessage("Sock", replicatedData, true, blacklist);
+    }
+
+    private boolean checkWin(User player) {
+        if (player != null && this.finished.size() >= this.size -1) {
+            LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+            data.put("Success", true);
+            data.put("User", player.getUsername());
+
+            this.replicateMessage("Winner", data, true);
+            data.remove("User");
+
+            new Thread(() -> {
+                try {
+                    Thread.sleep(5000);
+                    User host = getHost();
+                    Game newLobby = new Game(host, this.size, this.password);
+                    data.put("Token", false);
+
+                    this.players.forEach((plr) -> {
+                        if (plr != host) {
+                            data.replace("Token", newLobby.join(plr));
+                            ClientHandler handler = plr.getHandler();
+
+                            if (handler != null)
+                                handler.sendMessage("Join", data, true);
+                        }
+                    });
+
+                    this.remove();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+            return true;
+        }
+
+        return false;
     }
 
     public static void reloadGames() {

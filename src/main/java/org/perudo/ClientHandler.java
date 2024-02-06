@@ -239,6 +239,17 @@ public class ClientHandler implements Runnable {
                                     break;
                                 }
 
+                                case "Sock": {
+                                    Game lobby = user.getLobby();
+                                    if (lobby == null) {
+                                        newData.put("Error", "Not in a lobby");
+                                        return;
+                                    }
+
+                                    newData.put("Success", lobby.processPicks(user, 0, 8));
+                                    break;
+                                }
+
                                 default: {
                                     newData.put("Error", "Invalid scope");
                                 }
