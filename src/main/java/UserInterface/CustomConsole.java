@@ -154,6 +154,10 @@ public class CustomConsole {
         initialize(title, foreground, background, font);
     }
 
+    public void setTitle(String title) {
+        this.body.setTitle(title);
+    }
+
     public int println(String text) { // Print a new line
         this.prompt.addElement(text);
 

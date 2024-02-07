@@ -144,6 +144,10 @@ public class User {
         return results;
     }
 
+    public void setShuffle(LinkedList<Integer> dice) {
+        this.lastShuffle = dice;
+    }
+
     public LinkedList<Integer> getLastShuffle() {
         return this.lastShuffle;
     }

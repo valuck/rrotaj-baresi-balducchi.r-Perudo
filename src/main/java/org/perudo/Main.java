@@ -1,12 +1,10 @@
 package org.perudo;
 
-import Messaging.User;
 import Storage.ClientStorage;
 import Storage.ServerStorage;
 import UserInterface.CustomConsole;
 import UserInterface.OptionsMenu;
 import com.google.gson.internal.LinkedTreeMap;
-import com.google.protobuf.StringValue;
 
 import java.util.ArrayList;
 
@@ -116,8 +114,9 @@ public class Main {
     private static void clientLogin(String username) {
         // Send login message to the server
         LinkedTreeMap<String, String> data = new LinkedTreeMap<>();
+        currentUsername = username;
         data.put("Username", username);
-        data.put("LastToken", (String) ClientStorage.getSetting(STR."\{currentUsername.toLowerCase()}-token"));
+        data.put("LastToken", (String) ClientStorage.getSetting(STR."\{username.toLowerCase()}-token"));
 
         currentClient.sendMessage("Login", data, true);
     }
@@ -293,6 +292,8 @@ public class Main {
     }
 
     public static void printRestart(String message) {
+        console.setTitle("Perudo");
+
         if (currentClient != null)
             currentClient.close();
 
@@ -315,7 +316,9 @@ public class Main {
         String old = (String) ClientStorage.getSetting("username");
 
         if (old != null && !old.isEmpty()) {
+            console.setTitle(STR."Perudo - \{old}");
             currentUsername = old;
+
             console.println(old);
             console.println("------------------");
 
@@ -335,6 +338,7 @@ public class Main {
         } else {
             String username = console.readln();
             ClientStorage.updateSetting("username", username, true);
+            console.setTitle(STR."Perudo - \{username}");
             currentUsername = username;
             clientLogin(username);
         }
@@ -391,7 +395,7 @@ public class Main {
     }
 
     private static void printPlayers(ArrayList<String> players) {
-        players.forEach((value) -> console.println(value));
+        players.forEach((value) -> console.println(value)); // TODO: this is null, to fix
         console.println("------------------");
     }
 
@@ -432,7 +436,7 @@ public class Main {
 
         LinkedTreeMap<String, Object> values = new LinkedTreeMap<>();
         values.put("Amount", amount);
-        values.put("Value", amount);
+        values.put("Value", value);
 
         currentClient.sendMessage("Choice", values, true);
     }

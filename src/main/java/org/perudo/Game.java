@@ -3,7 +3,6 @@ package org.perudo;
 import Messaging.User;
 import Storage.ServerStorage;
 import com.google.gson.internal.LinkedTreeMap;
-import com.sun.jdi.connect.spi.TransportService;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import org.apache.logging.log4j.LogManager;
@@ -90,7 +89,7 @@ public class Game {
 
         this.lobbyId = ServerStorage.newLobby(this.name, this.size, this.password);
         games.put(this.lobbyId, this);
-        this.join(host);
+        tokenUpdate(host, this.join(host));
     }
 
     public Game(User host, int size, String password) {
@@ -100,13 +99,7 @@ public class Game {
 
         this.lobbyId = ServerStorage.newLobby(this.name, this.size, this.password);
         games.put(this.lobbyId, this);
-
-        LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
-        data.put("Success", true);
-        data.put("Token", this.join(host));
-
-        ClientHandler handler = host.getHandler();
-        handler.sendMessage("Join", data, true);
+        tokenUpdate(host, this.join(host));
     }
 
     public void remove() {
@@ -124,6 +117,7 @@ public class Game {
                 for (User value : this.disconnected) { // If a disconnected player access with the right Token
                     if (value.getCurrentToken().equals(tempToken)) {
                         user.setDice(value.getDice());
+                        user.setShuffle(value.getLastShuffle());
 
                         this.disconnected.remove(value);
                         found = true;
@@ -135,23 +129,23 @@ public class Game {
             if (found) {
                 token = tempToken;
 
-                new Thread(() -> { // Send all the data required
-                    ClientHandler handler = user.getHandler();
+                // Send all the data required
+                ClientHandler handler = user.getHandler();
 
-                    if (handler != null) {
-                        LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
-                        replicatedData.put("Success", true);
-                        diceUpdate(user);
+                if (handler != null) {
+                    LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
+                    replicatedData.put("Success", true);
+                    diceUpdate(user, true);
 
-                        replicatedData.put("Picks", STR."Amount: \{lastAmount}, Value: \{lastValue == 1 ? "J" : lastValue}");
-                        handler.sendMessage("Picked", replicatedData, true);
-                        replicatedData.remove("Picked");
+                    replicatedData.put("Picks", STR."Amount: \{lastAmount}, Value: \{lastValue == 1 ? "J" : lastValue}");
+                    handler.sendMessage("Picked", replicatedData, true);
+                    replicatedData.remove("Picked");
 
-                        replicatedData.put("User", lastPlayer.getUsername());
+                    if (this.lastPlayer != null) {
+                        replicatedData.put("User", this.lastPlayer.getUsername());
                         handler.sendMessage("Turn", replicatedData, true);
-                        replicatedData.remove("User");
                     }
-                }).start();
+                }
             } else
                 return null;
         }
@@ -160,18 +154,30 @@ public class Game {
             user.setCurrentToken(token);
         }
 
-        user.disconnectFromLobby();
+        if (user.getLobby() != this)
+            user.disconnectFromLobby();
         user.setLobby(this);
 
-        this.players.add(user);
+        boolean found = false;
+        for (User player : this.players) {
+            if (user == player) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+            this.players.add(user);
         this.used = true;
 
         if (this.players.size() >= this.size)
             this.paused = false;
 
         this.membersUpdated(this.paused);
-        if (this.started && !this.paused && this.getUserByShift() == user)
-            pickUpdate(user, this.lastPickState);
+        User next = this.getUserByShift();
+
+        if (this.started && !this.paused && next != null)
+            pickUpdate(next, this.lastPickState);
 
         return token;
     }
@@ -216,12 +222,13 @@ public class Game {
         lastValue = 0;
 
         for (User player : this.players) {
-            diceUpdate(player);
+            diceUpdate(player, false);
         }
     }
 
     public boolean processPicks(User player, int amount, int value) {
         User current = getUserByShift();
+        boolean tookAction = false;
 
         boolean itsSock = value >= 8;
         if (!itsSock && (player == null || player != current))
@@ -232,6 +239,7 @@ public class Game {
 
         if (itsSock || itsDudo) { // its dudo!
             sockUpdate(false);
+            tookAction = true;
             int correct = 0;
 
             for (User plr : this.players)
@@ -240,8 +248,9 @@ public class Game {
                         correct++;
 
             User victim = player;
+
             if (itsSock)
-                if (correct == this.lastValue) {
+                if (correct == this.lastAmount) {
                     ServerStorage.incrementDice(player.getCurrentToken(), 1);
                     this.dudoUpdate(true, player, true);
                 }
@@ -292,7 +301,7 @@ public class Game {
         }
 
         ServerStorage.incrementLobbyShift(this.lobbyId);
-        startShift(!itsDudo || !itsSock, picked); // TODO: fix this, was !itsDudo
+        startShift(!tookAction, picked);
         return true;
     }
 
@@ -408,7 +417,7 @@ public class Game {
 
         replicatedData.put("Success", true);
         replicatedData.put("Results", plrs);
-        replicatedData.put("Victim", STR."\{plr.getUsername()} lost a dice!");
+        replicatedData.put("Victim", STR."\{plr.getUsername()} \{itsSock ? (dudo ? "earned" : "lost") : "lost"} a dice!");
         replicatedData.put("Verdict", STR."\{itsSock ? "Sock" : "Dudo"} was \{(dudo ? "right" : "wrong")}!");
         replicateMessage("Dudo", replicatedData, true);
     }
@@ -431,11 +440,11 @@ public class Game {
         replicateMessage("Turn", replicatedData, true, blacklist);
     }
 
-    private static void diceUpdate(User player) {
+    private static void diceUpdate(User player, boolean oldDices) {
         LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
         StringBuilder results = new StringBuilder();
 
-        for (Integer dice : player.shuffle()) {
+        for (Integer dice : (oldDices ? player.getLastShuffle() : player.shuffle())) {
             results.append(STR."\{dice == 1 ? "J" : dice.toString()} ");
         }
 
@@ -465,30 +474,31 @@ public class Game {
         this.replicateMessage("Sock", replicatedData, true, blacklist);
     }
 
+    public void tokenUpdate(User player, String token) {
+        LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+        data.put("Success", true);
+        data.put("Token", this.join(player));
+
+        ClientHandler handler = player.getHandler();
+        handler.sendMessage("Join", data, true);
+    }
+
     private boolean checkWin(User player) {
         if (player != null && this.finished.size() >= this.size -1) {
             LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
             data.put("Success", true);
             data.put("User", player.getUsername());
-
             this.replicateMessage("Winner", data, true);
-            data.remove("User");
 
             new Thread(() -> {
                 try {
                     Thread.sleep(5000);
                     User host = getHost();
                     Game newLobby = new Game(host, this.size, this.password);
-                    data.put("Token", false);
 
                     this.players.forEach((plr) -> {
-                        if (plr != host) {
-                            data.replace("Token", newLobby.join(plr));
-                            ClientHandler handler = plr.getHandler();
-
-                            if (handler != null)
-                                handler.sendMessage("Join", data, true);
-                        }
+                        if (plr != host)
+                            tokenUpdate(plr, newLobby.join(plr));
                     });
 
                     this.remove();

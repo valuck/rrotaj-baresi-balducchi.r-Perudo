@@ -23,6 +23,7 @@ public class ClientHandler implements Runnable {
     private final User user = new User();
     private BufferedReader in;
     private PrintWriter out;
+    private boolean closed;
 
     public ClientHandler(Socket clientSocket) {
         // Handle a new client connection in a new thread
@@ -291,9 +292,11 @@ public class ClientHandler implements Runnable {
         logger.info("Client disconnected");
 
         // Put disconnection check here!
-        Game lobby = this.user.getLobby();
-        if (lobby != null) // Remove the player from the lobby if he was playing
-            lobby.disconnect(this.user);
+        if (!this.closed) {
+            Game lobby = this.user.getLobby();
+            if (lobby != null) // Remove the player from the lobby if he was playing
+                lobby.disconnect(this.user);
+        }
 
         this.close();
         logger.info("Client handler closed");
@@ -310,10 +313,14 @@ public class ClientHandler implements Runnable {
     }
 
     public void close() {
+        if (this.closed)
+            return;
+
         try {
             // Remove handled client from the user list
             User.removeByHandler(this);
             logger.warn("Client handler closing");
+            closed = true;
 
             // Close the socket, input & output
             if (this.clientSocket != null && !this.clientSocket.isClosed())

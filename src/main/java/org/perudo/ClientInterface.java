@@ -111,11 +111,12 @@ public class ClientInterface implements Runnable {
                         if (scope != null) {
                             // Do requested action or response
                             LinkedTreeMap<String, Object> castedData = null;
+                            String err = "Unknown";
 
                             try {
                                 castedData = (LinkedTreeMap) data;
                                 if (!isSuccess(castedData) && castedData.containsKey("Error"))
-                                    logger.error((String) castedData.get("Error"));
+                                    err = (String) castedData.get("Error");
 
                             } catch (Exception e) {
                                 // Ignore
@@ -126,7 +127,7 @@ public class ClientInterface implements Runnable {
                                     if (isSuccess(castedData))
                                         Main.printLogin();
                                     else
-                                        Main.printRestart("Error while pairing with the server");
+                                        Main.printRestart(STR."Error while pairing with the server: \{err}");
 
                                     break;
                                 }
@@ -136,7 +137,7 @@ public class ClientInterface implements Runnable {
                                         Main.printSoloMessage("Logged in, loading..");
                                         this.sendMessage("Lobbies", null, true);
                                     } else
-                                        Main.printRestart("Failed to log in");
+                                        Main.printRestart(STR."Failed to log in: \{err}");
 
                                     break;
                                 }
@@ -149,13 +150,10 @@ public class ClientInterface implements Runnable {
                                 }
 
                                 case "Lobbies": {
-                                    if (isSuccess(castedData)) {
-                                        if (castedData.containsKey("Public") && castedData.containsKey("Private"))
-                                            Main.printLobbies((LinkedTreeMap) castedData.get("Public"), (LinkedTreeMap) castedData.get("Private"));
-                                        else
-                                            Main.printRestart("Error while loading lobbies");
-                                    } else
-                                        Main.printRestart("Unable to load lobbies");
+                                    if (isSuccess(castedData) && castedData.containsKey("Public") && castedData.containsKey("Private"))
+                                        Main.printLobbies((LinkedTreeMap) castedData.get("Public"), (LinkedTreeMap) castedData.get("Private"));
+                                    else
+                                        Main.printRestart(STR."Unable to load lobbies: \{err}");
 
                                     break;
                                 }
@@ -179,7 +177,7 @@ public class ClientInterface implements Runnable {
 
                                         Main.printLobbyRoom((String) castedData.get("Name"), (ArrayList) castedData.get("Players"), (String) castedData.get("Host"), (Number) castedData.get("Size"), list);
                                     } else {
-                                        Main.printSoloMessage("Failed to load the lobby, loading lobbies list..");
+                                        Main.printSoloMessage(STR."Failed to load the lobby: \{err}, loading lobbies list..");
                                         Thread.sleep(2000);
 
                                         this.sendMessage("Lobbies", null, true);
@@ -192,7 +190,7 @@ public class ClientInterface implements Runnable {
                                     if (isSuccess(castedData) && castedData.containsKey("Token")) // Save the new token to access the new lobby
                                         ClientStorage.updateSetting(STR."\{Main.getUsername().toLowerCase()}-token", castedData.get("Token"), true);
                                     else {
-                                        Main.printSoloMessage("Unable to join the lobby, loading lobbies list..");
+                                        Main.printSoloMessage(STR."Unable to join the lobby: \{err}, loading lobbies list..");
                                         Thread.sleep(2000);
 
                                         this.sendMessage("Lobbies", null, true);
@@ -280,10 +278,10 @@ public class ClientInterface implements Runnable {
 
                                 case "Shutdown": {
                                     if (data != null) {
-                                        logger.warn((String) data);
                                         // get shutdown event from here!
-
-                                        logger.warn("Disconnecting client");
+                                        String msg = STR."Disconnecting: \{(String) data}";
+                                        Main.printRestart(msg);
+                                        logger.warn(msg);
                                         close();
                                     }
 
