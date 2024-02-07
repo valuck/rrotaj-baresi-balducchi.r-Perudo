@@ -240,14 +240,24 @@ public class Game {
                         correct++;
 
             User victim = player;
-            if ((itsSock && correct == this.lastAmount) || (itsDudo && correct >= this.lastAmount)) {
-                ServerStorage.incrementDice(player.getCurrentToken(), -1);
-                this.dudoUpdate(false, player, itsSock);
-            } else {
-                ServerStorage.incrementDice(this.lastPlayer.getCurrentToken(), -1);
-                this.dudoUpdate(true, this.lastPlayer, itsSock);
-                victim = this.lastPlayer;
-            }
+            if (itsSock)
+                if (correct == this.lastValue) {
+                    ServerStorage.incrementDice(player.getCurrentToken(), 1);
+                    this.dudoUpdate(true, player, true);
+                }
+                else {
+                    ServerStorage.incrementDice(player.getCurrentToken(), -1);
+                    this.dudoUpdate(false, player, true);
+                }
+            else
+                if (correct >= this.lastAmount) {
+                    ServerStorage.incrementDice(player.getCurrentToken(), -1);
+                    this.dudoUpdate(false, player, false);
+                } else {
+                    ServerStorage.incrementDice(this.lastPlayer.getCurrentToken(), -1);
+                    this.dudoUpdate(true, this.lastPlayer, false);
+                    victim = this.lastPlayer;
+                }
 
             if (ServerStorage.getDice(victim.getCurrentToken()) <= 0) {
                 this.finished.putIfAbsent(player.getCurrentToken(), true);
@@ -282,7 +292,7 @@ public class Game {
         }
 
         ServerStorage.incrementLobbyShift(this.lobbyId);
-        startShift(!itsDudo, picked);
+        startShift(!itsDudo || !itsSock, picked); // TODO: fix this, was !itsDudo
         return true;
     }
 
@@ -435,18 +445,22 @@ public class Game {
     }
 
     private void sockUpdate(boolean canSock) {
+        if (canSock && this.lastPlayer == null)
+            canSock = false;
+
         LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
         replicatedData.put("Success", true);
         replicatedData.put("Sock", canSock);
 
         LinkedTreeMap<String, Boolean> blacklist = new LinkedTreeMap<>();
-        User current = this.getUserByShift();
+        if (canSock) {
+            User current = this.getUserByShift();
+            if (current != null)
+                blacklist.put(current.getCurrentToken(), true);
 
-        if (current != null)
-            blacklist.put(current.getCurrentToken(), true);
-
-        if (this.lastPlayer != null)
-            blacklist.put(this.lastPlayer.getCurrentToken(), true);
+            if (this.lastPlayer != null)
+                blacklist.put(this.lastPlayer.getCurrentToken(), true);
+        }
 
         this.replicateMessage("Sock", replicatedData, true, blacklist);
     }

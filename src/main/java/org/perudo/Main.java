@@ -572,7 +572,7 @@ public class Main {
 
         if (sock)
             menu.addOption("Say sock!", (_) -> {
-
+                currentClient.sendMessage("Sock", null, true);
                 return null;
             });
 
