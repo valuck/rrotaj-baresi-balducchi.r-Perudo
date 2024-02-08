@@ -137,7 +137,7 @@ public class Game {
                     replicatedData.put("Success", true);
                     diceUpdate(user, true);
 
-                    replicatedData.put("Picks", STR."Amount: \{lastAmount}, Value: \{lastValue == 1 ? "J" : lastValue}");
+                    replicatedData.put("Picks", STR."Amount: \{this.lastAmount}, Value: \{this.lastValue == 1 ? "J" : this.lastValue}");
                     handler.sendMessage("Picked", replicatedData, true);
                     replicatedData.remove("Picked");
 
@@ -259,7 +259,7 @@ public class Game {
                     this.dudoUpdate(false, player, true);
                 }
             else
-                if (correct >= this.lastAmount) {
+                if (correct <= this.lastAmount) {
                     ServerStorage.incrementDice(player.getCurrentToken(), -1);
                     this.dudoUpdate(false, player, false);
                 } else {
@@ -410,7 +410,7 @@ public class Game {
             result.append(player.getUsername()).append(": ");
 
             for (int dice : player.getLastShuffle())
-                result.append(dice).append(" ");
+                result.append(dice == 1 ? "J" : dice).append(" ");
 
             plrs.add(result.toString());
         }
@@ -469,6 +469,10 @@ public class Game {
 
             if (this.lastPlayer != null)
                 blacklist.put(this.lastPlayer.getCurrentToken(), true);
+
+            this.finished.forEach((player, value) -> {
+                blacklist.put(player, true);
+            });
         }
 
         this.replicateMessage("Sock", replicatedData, true, blacklist);

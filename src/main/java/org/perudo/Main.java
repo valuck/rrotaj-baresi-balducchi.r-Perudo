@@ -7,6 +7,7 @@ import UserInterface.OptionsMenu;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Main {
     private static ClientInterface currentClient;
@@ -395,6 +396,9 @@ public class Main {
     }
 
     private static void printPlayers(ArrayList<String> players) {
+        if (players == null || players.isEmpty())
+            return;
+
         players.forEach((value) -> console.println(value)); // TODO: this is null, to fix
         console.println("------------------");
     }
@@ -491,7 +495,7 @@ public class Main {
         console.clear();
         console.println(STR."\{ping}ms");
 
-        printPlayers(players);
+        printPlayers(Main.players);
         OptionsMenu menu = new OptionsMenu();
 
         switch (scope) {
