@@ -92,7 +92,7 @@ public class Game {
         tokenUpdate(host, this.join(host));
     }
 
-    public Game(User host, int size, String password) {
+    private Game(User host, int size, String password) {
         this.size = size;
         this.password = password;
         this.name = STR."\{host.getUsername()}'s lobby";
@@ -128,7 +128,6 @@ public class Game {
 
             if (found) {
                 token = tempToken;
-
                 // Send all the data required
                 ClientHandler handler = user.getHandler();
 
@@ -160,7 +159,7 @@ public class Game {
 
         boolean found = false;
         for (User player : this.players) {
-            if (user == player) {
+            if (user.getCurrentToken().equals(player.getCurrentToken())) {
                 found = true;
                 break;
             }
@@ -308,6 +307,7 @@ public class Game {
     private User getUserByShift() {
         int shift = ServerStorage.getLobbyShift(this.lobbyId) -1;
         LinkedList<String> tokens = ServerStorage.getTokensInLobby(this.lobbyId);
+
         if (shift >= 0 && tokens.size() > shift) {
             String selected = tokens.get(shift);
 
@@ -337,9 +337,11 @@ public class Game {
             this.startShift(canDudo);
             return;
         } else {
-            sockUpdate(true);
-            pickUpdate(player, canDudo);
+            this.sockUpdate(true);
+            this.pickUpdate(player, canDudo);
         }
+
+        System.err.println(player.getUsername());
     }
 
     private void startShift(boolean canDudo, String picked) {
@@ -379,8 +381,12 @@ public class Game {
     }
 
     public void membersUpdated(boolean pause) {
-        if (pause)
+        if (pause) {
+            if (!this.started)
+                return;
+
             this.paused = true;
+        }
         // Replicate to all lobby members
         new Thread(() -> { // Update player list
             LinkedTreeMap<String, Object> replicatedData = new LinkedTreeMap<>();
@@ -490,6 +496,8 @@ public class Game {
     private boolean checkWin(User player) {
         if (player != null && this.finished.size() >= this.size -1) {
             LinkedTreeMap<String, Object> data = new LinkedTreeMap<>();
+            this.started = false;
+
             data.put("Success", true);
             data.put("User", player.getUsername());
             this.replicateMessage("Winner", data, true);

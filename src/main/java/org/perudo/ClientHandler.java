@@ -149,8 +149,8 @@ public class ClientHandler implements Runnable {
                                     if (((LinkedTreeMap) data).containsKey("Password"))
                                         password = (String) ((LinkedTreeMap) data).get("Password");
 
-                                    Game lobby = new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), user, password);
-                                    lobby.membersUpdated(false);
+                                    new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), user, password);
+                                    //lobby.membersUpdated(false);
                                     newData.put("Success", true);
                                     break;
                                 }
