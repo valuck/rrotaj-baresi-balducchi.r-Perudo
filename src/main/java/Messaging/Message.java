@@ -22,9 +22,10 @@ public class Message {
         try {
             // Generate RSA keys
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
+            generator.initialize(2048); // Size of the key
             KeyPair pair = generator.generateKeyPair();
 
+            // Public and private RSA key
             publicKey = pair.getPublic();
             privateKey = pair.getPrivate();
         } catch (NoSuchAlgorithmException e) {
@@ -39,12 +40,12 @@ public class Message {
     public<T1> Message(User user, String scope, T1 data, boolean encoded) {
         // Build a new message for the specified user
         LinkedTreeMap<String, Object> body = new LinkedTreeMap<>();
-        boolean isEncoded = encoded && user.getEncodingKey() != null;
+        boolean isEncoded = encoded && user.getEncodingKey() != null; // Check if it has to be encoded and if it's possible to
         Base64.Encoder encoder = Base64.getEncoder();
         Gson gson = new Gson();
         String message = "";
 
-        if (isEncoded)
+        if (isEncoded) // If it has to be encoded
             try {
                 message = gson.toJson(data);
 
@@ -52,6 +53,7 @@ public class Message {
                 Cipher encryptCipher = Cipher.getInstance("RSA");
                 encryptCipher.init(Cipher.ENCRYPT_MODE, user.getEncodingKey());
 
+                // Get bytes and crypt
                 byte[] secretMessageBytes = message.getBytes(StandardCharsets.UTF_8);
                 byte[] encryptedMessageBytes = encryptCipher.doFinal(secretMessageBytes);
 

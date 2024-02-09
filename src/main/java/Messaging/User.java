@@ -58,6 +58,21 @@ public class User {
         return null;
     }
 
+    public static User getUserByToken(String token) {
+        // returns the user with the specified token, if registered
+        for (int i=0; i<users.size(); i++) { // foreach loops can give an error
+            User user = users.get(i);
+
+            if (user != null) {
+                String userToken = user.getCurrentToken(); // Checks for the token
+                if (userToken != null && userToken.equals(token))
+                    return user;
+            }
+        }
+
+        return null;
+    }
+
     public static void removeByHandler(ClientHandler handler) {
         // removes the users handled by the specified ClientHandler, used while disconnecting
         for (int i=0; i<users.size(); i++) {
@@ -126,6 +141,7 @@ public class User {
     }
 
     public void disconnectFromLobby() {
+        // Disconnect the user if in a lobby
         if (this.lobby != null)
             this.lobby.disconnect(this);
     }
@@ -134,12 +150,15 @@ public class User {
         if (this.lobby.getId() < 0 || this.currentToken == null)
             return null;
 
+        // Get the number of dice the player has
         int dice = ServerStorage.getDice(this.currentToken);
         LinkedList<Integer> results = new LinkedList<>();
 
+        // Generate new set of dice
         for(int i=0; i<dice; i++)
             results.add(new Random().nextInt(1, 6));
 
+        // Save as latest set
         this.lastShuffle = results;
         return results;
     }

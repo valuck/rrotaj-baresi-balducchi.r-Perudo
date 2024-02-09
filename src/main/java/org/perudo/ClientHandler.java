@@ -81,7 +81,7 @@ public class ClientHandler implements Runnable {
                                     break;
                                 }
 
-                                case "Ping": {
+                                case "Ping": { // Allows the client to check for the server presence
                                     newData.put("Success", true);
                                     break;
                                 }
@@ -115,19 +115,22 @@ public class ClientHandler implements Runnable {
                                 case "Lobbies": {
                                     user.disconnectFromLobby();
 
+                                    // Separate each type of lobby
                                     LinkedTreeMap<String, String> publicLobbies = new LinkedTreeMap<>();
                                     LinkedTreeMap<String, String> privateLobbies = new LinkedTreeMap<>();
 
+                                    // Fetch all the lobbies
                                     LinkedTreeMap<Integer, Game> lobbies = Game.getLobbies();
                                     lobbies.forEach((key, value) -> {
                                         String name = STR."\{value.getName()} (\{value.getPlayers().size()}/\{value.getSize()})";
 
-                                        if (value.hasPassword())
+                                        if (value.hasPassword()) // Identify the lobby type
                                             privateLobbies.put(key.toString(), name);
                                         else
                                             publicLobbies.put(key.toString(), name);
                                     });
 
+                                    // Build a response
                                     newData.put("Success", true);
                                     newData.put("Public", publicLobbies);
                                     newData.put("Private", privateLobbies);
@@ -135,38 +138,44 @@ public class ClientHandler implements Runnable {
                                 }
 
                                 case "Create": {
+                                    // Check if the user is logged in correctly
                                     if (user.getUsername() == null) {
                                         newData.put("Error", "Not logged in");
                                         break;
                                     }
 
-                                    if (data == null || !((LinkedTreeMap) data).containsKey("Size")) { // Data is required
+                                    // Cast and check for data
+                                    LinkedTreeMap<String, Object> casted = (LinkedTreeMap) data;
+                                    if (data == null || !casted.containsKey("Size")) {
                                         newData.put("Error", "Missing data");
                                         break;
                                     }
 
-                                    String password = null;
-                                    if (((LinkedTreeMap) data).containsKey("Password"))
-                                        password = (String) ((LinkedTreeMap) data).get("Password");
+                                    String password = null; // Check for a custom password
+                                    if (casted.containsKey("Password"))
+                                        password = (String) casted.get("Password");
 
-                                    new Game(((Number) ((LinkedTreeMap) data).get("Size")).intValue(), user, password);
-                                    //lobby.membersUpdated(false);
+                                    // Create the actual lobby
+                                    new Game(((Number) casted.get("Size")).intValue(), user, password);
                                     newData.put("Success", true);
                                     break;
                                 }
 
                                 case "Join": {
+                                    // Check if the user is logged in correctly
                                     if (user.getUsername() == null) {
                                         newData.put("Error", "Not logged in");
                                         break;
                                     }
 
+                                    // Cast and check for data
                                     LinkedTreeMap<String, Object> casted = (LinkedTreeMap) data;
                                     if (data == null || !casted.containsKey("Lobby")) { // Data is required
                                         newData.put("Error", "Missing data");
                                         break;
                                     }
 
+                                    // Check for the requested lobby
                                     Game lobby = Game.getByLobbyId(Integer.parseInt((String) casted.get("Lobby")));
                                     if (lobby != null) {
                                         boolean flagged = false;
@@ -178,12 +187,13 @@ public class ClientHandler implements Runnable {
                                             }
                                         }
 
-                                        if (flagged)
+                                        if (flagged) // Exit
                                             break;
 
+                                        // Join the lobby
                                         String token = lobby.join(user, (String) casted.get("Password"));
 
-                                        if (token == null)
+                                        if (token == null) // If the user cannot join
                                             newData.put("Error", "Not authorized to join");
                                         else {
                                             newData.put("Success", true);
@@ -197,31 +207,36 @@ public class ClientHandler implements Runnable {
                                 }
 
                                 case "Start": {
+                                    // Check if the user is in a lobby
                                     Game lobby = user.getLobby();
                                     if (lobby == null) {
                                         newData.put("Error", "Not in a lobby");
                                         return;
                                     }
 
+                                    // Check if the user is the host of the lobby
                                     if (lobby.getHost() != user) {
                                         newData.put("Error", "Not authorized");
                                         return;
                                     }
 
+                                    // Start the game
                                     lobby.startGame();
                                     newData.put("Success", true);
                                     break;
                                 }
 
                                 case "Choice": {
+                                    // Check if the user is in a lobby
                                     Game lobby = user.getLobby();
                                     if (lobby == null) {
                                         newData.put("Error", "Not in a lobby");
                                         return;
                                     }
 
+                                    // Process the new values picked by the player
                                     LinkedTreeMap<String, Object> casted = (LinkedTreeMap) data;
-                                    if (casted.containsKey("Amount") && casted.containsKey("Value"))
+                                    if (casted.containsKey("Amount") && casted.containsKey("Value")) // formulate a response by using the result of the processed data
                                         newData.put("Success", lobby.processPicks(user, ((Number) casted.get("Amount")).intValue(), ((Number) casted.get("Value")).intValue()));
                                     else
                                         newData.put("Error", "Missing data");
@@ -230,23 +245,27 @@ public class ClientHandler implements Runnable {
                                 }
 
                                 case "Dudo": {
+                                    // Check if the user is in a lobby
                                     Game lobby = user.getLobby();
                                     if (lobby == null) {
                                         newData.put("Error", "Not in a lobby");
                                         return;
                                     }
 
+                                    // Process dudo action
                                     newData.put("Success", lobby.processPicks(user, 0, 7));
                                     break;
                                 }
 
                                 case "Sock": {
+                                    // Check if the user is in a lobby
                                     Game lobby = user.getLobby();
                                     if (lobby == null) {
                                         newData.put("Error", "Not in a lobby");
                                         return;
                                     }
 
+                                    // Process calza action
                                     newData.put("Success", lobby.processPicks(user, 0, 8));
                                     break;
                                 }
@@ -271,7 +290,7 @@ public class ClientHandler implements Runnable {
                         newData.put("Error", "Server exception!");
                     }
 
-                    if (!newData.containsKey("Success"))
+                    if (!newData.containsKey("Success")) // Set success as false by default
                         newData.put("Success", false);
 
                     if (response == null) // build an exception message

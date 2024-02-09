@@ -13,7 +13,7 @@ public class OptionsMenu {
     }
 
     public void addOption(String text, Function<Void, Void> function) {
-        this.options.put(text, function); // add a new option
+        this.options.putIfAbsent(text, function); // add a new option
     }
 
     public void removeOption(String text) {
@@ -28,7 +28,7 @@ public class OptionsMenu {
             Function<Void, Void> function = this.options.get(text);
 
             if (function != null)
-                new Thread(new Runnable() { // Execute in a new thread
+                new Thread(new Runnable() { // Execute in a new thread to prevent options from yielding the console on readln
                     @Override
                     public void run() {
                         function.apply(null);

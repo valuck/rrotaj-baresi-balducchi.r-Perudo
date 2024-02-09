@@ -123,7 +123,7 @@ public class ClientInterface implements Runnable {
                             }
 
                             switch (scope) { // If needed to handle any action response
-                                case "Connection": {
+                                case "Connection": { // Exchange encryption keys
                                     if (isSuccess(castedData))
                                         Main.printLogin();
                                     else
@@ -132,7 +132,7 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Login": {
+                                case "Login": { // Send login data to the server
                                     if (isSuccess(castedData)) {
                                         Main.printSoloMessage("Logged in, loading..");
                                         this.sendMessage("Lobbies", null, true);
@@ -142,14 +142,14 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Ping": {// Check for action success
+                                case "Ping": { // Check for the server presence
                                     if (isSuccess(castedData))
                                         ping_end = new Timestamp(System.currentTimeMillis());
 
                                     break;
                                 }
 
-                                case "Lobbies": {
+                                case "Lobbies": { // Request a list of the lobbies
                                     if (isSuccess(castedData) && castedData.containsKey("Public") && castedData.containsKey("Private"))
                                         Main.printLobbies((LinkedTreeMap) castedData.get("Public"), (LinkedTreeMap) castedData.get("Private"));
                                     else
@@ -158,7 +158,7 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Create": {
+                                case "Create": { // Request a lobby creation
                                     if (!isSuccess(castedData)) {
                                         Main.printSoloMessage("Failed to create the lobby, loading lobbies list..");
                                         Thread.sleep(2000);
@@ -169,9 +169,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Members": {
+                                case "Members": { // Handles the members event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("Name") && castedData.containsKey("Players") && castedData.containsKey("Host") && castedData.containsKey("Size") && castedData.containsKey("Started") && castedData.containsKey("Pause")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("Pause"));
                                         list.add(castedData.get("Started"));
 
@@ -186,7 +186,7 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Join": {
+                                case "Join": { // Handles the response or event form the server
                                     if (isSuccess(castedData) && castedData.containsKey("Token")) // Save the new token to access the new lobby
                                         ClientStorage.updateSetting(STR."\{Main.getUsername().toLowerCase()}-token", castedData.get("Token"), true);
                                     else {
@@ -199,9 +199,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Turn": {
+                                case "Turn": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("User")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("User"));
 
                                         Main.printGame(scope, list);
@@ -210,9 +210,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Dice": {
+                                case "Dice": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("Dice")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("Dice"));
 
                                         Main.printGame(scope, list);
@@ -221,9 +221,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Pick": {
+                                case "Pick": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("Dudo") && castedData.containsKey("Amount") && castedData.containsKey("Value")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("Dudo"));
                                         list.add(castedData.get("Amount"));
                                         list.add(castedData.get("Value"));
@@ -234,9 +234,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Picked": {
+                                case "Picked": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("Picks")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("Picks"));
 
                                         Main.printGame(scope, list);
@@ -245,9 +245,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Sock": {
+                                case "Sock": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("Sock")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("Sock"));
 
                                         Main.printGame(scope, list);
@@ -256,9 +256,9 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Dudo": {
+                                case "Dudo": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("Results") && castedData.containsKey("Victim") && castedData.containsKey("Verdict")) {
-                                        ArrayList<Object> list = new ArrayList<>();
+                                        ArrayList<Object> list = new ArrayList<>(); // Used to store multiple values for a shared function
                                         list.add(castedData.get("Results"));
                                         list.add(castedData.get("Victim"));
                                         list.add(castedData.get("Verdict"));
@@ -269,16 +269,15 @@ public class ClientInterface implements Runnable {
                                     break;
                                 }
 
-                                case "Winner": {
+                                case "Winner": { // Handles the event from the server
                                     if (isSuccess(castedData) && castedData.containsKey("User"))
                                         Main.printWinner((String) castedData.get("User"));
 
                                     break;
                                 }
 
-                                case "Shutdown": {
+                                case "Shutdown": { // Handles the event from the server
                                     if (data != null) {
-                                        // get shutdown event from here!
                                         String msg = STR."Disconnecting: \{(String) data}";
                                         Main.printRestart(msg);
                                         logger.warn(msg);

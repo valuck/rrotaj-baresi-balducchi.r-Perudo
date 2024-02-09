@@ -72,10 +72,10 @@ public class ServerStorage {
     }
 
     public static void close() {
-        if (conn == null)
+        if (conn == null) // If the connection is already closed
             return;
 
-        try {
+        try { // Try to close the connection with the database
             conn.close();
             conn = null;
         } catch (SQLException e) {

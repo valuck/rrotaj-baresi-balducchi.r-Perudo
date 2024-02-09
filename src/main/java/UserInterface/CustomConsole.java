@@ -84,6 +84,7 @@ public class CustomConsole {
                     int index = list.getSelectedIndex();
                     int size = prompt.size();
 
+                    // Set the selection withing the option menu's options range
                     if (optionsMin >= 0 && optionsMin < size && index < optionsMin)
                         list.setSelectedIndex(optionsMin);
                     else if (optionsMax >= 0 && optionsMax < size && index > optionsMax)
@@ -92,7 +93,7 @@ public class CustomConsole {
             }
         });
 
-        this.input = new JTextField("> ");
+        this.input = new JTextField("> "); // Set up the text input field
         this.input.setBorder(javax.swing.BorderFactory.createEmptyBorder());
         this.input.setBackground(background);
         this.input.setForeground(foreground);
@@ -107,18 +108,18 @@ public class CustomConsole {
                 if (keyCode == KeyEvent.VK_ENTER) { // Enter command and do action
                     String text = input.getText();
 
-                    if (text.charAt(0) == '>')
+                    if (text.charAt(0) == '>') // Remove the command symbol
                         text = text.substring(1);
 
-                    text = text.trim();
-                    commandBuffer = text;
-                    commandBufferId++;
+                    text = text.trim(); // Trim the text
+                    commandBuffer = text; // Update the last used command
+                    commandBufferId++; // Increase the id of the command
                     println(text);
 
                     if (currentMenu != null)
-                        currentMenu.doOption(text);
+                        currentMenu.doOption(text); // Do the option if it matches
 
-                    input.setText("> ");
+                    input.setText("> "); // Reset the input text
                     focusInput();
                 }
             }
@@ -179,7 +180,7 @@ public class CustomConsole {
         this.setTextInput(true);
 
         int last = this.commandBufferId;
-        while (this.commandBufferId <= last) {
+        while (this.commandBufferId <= last) { // Yields the tread until a new command is sent
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -187,7 +188,7 @@ public class CustomConsole {
             }
         }
 
-        this.setTextInput(originalState);
+        this.setTextInput(originalState); // Send the latest command
         return this.commandBuffer;
     }
 
@@ -196,13 +197,13 @@ public class CustomConsole {
         this.optionsMin = -1;
         this.optionsMax = -1;
 
-        this.list.clearSelection();
-        this.prompt.removeAllElements();
+        this.list.clearSelection(); // Deselect the current selection
+        this.prompt.removeAllElements(); // Remove all the entries
     }
 
     public void edit(String text, int index) { // Edit a prompt
         if (index >= 0 && index < this.prompt.size())
-            this.prompt.setElementAt(text, index);
+            this.prompt.setElementAt(text, index); // Set the text of the element at the given index
     }
 
     public void focusInput() {
@@ -211,11 +212,11 @@ public class CustomConsole {
 
         // Focus on the used object
         if (this.input.isVisible()) {
-            this.input.requestFocus();
-            this.input.setCaretPosition(this.input.getDocument().getLength());
+            this.input.requestFocus(); // Focus on the text field
+            this.input.setCaretPosition(this.input.getDocument().getLength()); // Set the cursor position of the text field at the end
         }
         else {
-            this.list.requestFocus();
+            this.list.requestFocus(); // Focus on the list and select the first available option if any
             if (this.selectable && this.optionsMin >= 0)
                 this.list.setSelectedIndex(this.optionsMin);
         }
@@ -276,12 +277,13 @@ public class CustomConsole {
     public void drawOptionsMenu(OptionsMenu menu) {
         //this.clear();
         this.currentMenu = menu; // Set and draw all options
-        this.optionsMin = this.prompt.size();
+        this.optionsMin = this.prompt.size(); // Set the options range
 
+        // Print each option in the console
         menu.getOptions().forEach(this::println);
-        this.optionsMax = this.prompt.size() -1;
+        this.optionsMax = this.prompt.size() -1; // Set the options range
 
-        this.focusInput();
+        this.focusInput(); // Focus on the current input mode
     }
 
     public void close() {

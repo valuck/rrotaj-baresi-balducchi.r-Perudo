@@ -7,9 +7,9 @@ import UserInterface.OptionsMenu;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 public class Main {
+    public static OptionsMenu lastMenu = new OptionsMenu();
     private static ClientInterface currentClient;
     private static ArrayList<String> players;
     private static String currentUsername;
@@ -399,7 +399,7 @@ public class Main {
         if (players == null || players.isEmpty())
             return;
 
-        players.forEach((value) -> console.println(value)); // TODO: this is null, to fix
+        players.forEach((value) -> console.println(value));
         console.println("------------------");
     }
 
@@ -479,8 +479,14 @@ public class Main {
         console.clear();
         printStats();
 
+        boolean one = false;
+        if (startValue >= 6) {
+            startValue = 0;
+            one = true;
+        }
+
         console.println("Set value to:");
-        for (int i=startValue+1; i<=6; i++) {
+        for (int i=startValue+1; i<=(one ? 1 : 6); i++) {
             int finalI = i;
             menu.addOption(String.valueOf(STR."\{finalI}\{i==1 ? " (jolly)" : ""}"), (_) -> {
                 sendChoice(amount, finalI);
@@ -494,9 +500,7 @@ public class Main {
     public static void printGame(String scope, ArrayList<Object> data) {
         console.clear();
         console.println(STR."\{ping}ms");
-
         printPlayers(Main.players);
-        OptionsMenu menu = new OptionsMenu();
 
         switch (scope) {
             case "Dice": {
@@ -506,6 +510,8 @@ public class Main {
 
             case "Dudo": {
                 console.println("Results:");
+                lastMenu.clearOptions();
+
                 ((ArrayList) data.get(0)).forEach((value) -> {
                     console.println((String) value);
                 });
@@ -524,21 +530,23 @@ public class Main {
 
             case "Pick": {
                 Main.turn = "your";
+                lastMenu.clearOptions();
+
                 int startAmount = ((Number) data.get(1)).intValue();
                 int startValue = ((Number) data.get(2)).intValue();
 
                 if ((boolean) data.get(0)) {
-                    menu.addOption("Increment amount", (_) -> {
+                    lastMenu.addOption("Increment amount", (_) -> {
                         sendChoice(incrementAmount(startAmount), 0);
                         return null;
                     });
 
-                    menu.addOption("Increment value", (_) -> {
+                    lastMenu.addOption("Increment value", (_) -> {
                         incrementValue(startValue, 0);
                         return null;
                     });
 
-                    menu.addOption("Say dudo!", (_) -> {
+                    lastMenu.addOption("Say dudo!", (_) -> {
                         console.clear();
                         console.println("Sending dudo..");
                         currentClient.sendMessage("Dudo", null, true);
@@ -546,7 +554,7 @@ public class Main {
                     });
                 }
                 else {
-                    menu.addOption("Insert values", (_) -> {
+                    lastMenu.addOption("Insert values", (_) -> {
                         int amount = incrementAmount(startAmount);
                         incrementValue(startValue, amount);
                         return null;
@@ -558,6 +566,8 @@ public class Main {
 
             case "Picked": {
                 Main.picked = (String) data.get(0);
+                lastMenu.clearOptions();
+
                 break;
             }
 
@@ -572,6 +582,7 @@ public class Main {
 
             case "Sock": {
                 sock = (Boolean) data.get(0);
+                break;
             }
         }
 
@@ -579,11 +590,11 @@ public class Main {
         console.println(STR."It's \{Main.turn} turn!");
 
         if (sock)
-            menu.addOption("Say sock!", (_) -> {
+            lastMenu.addOption("Say sock!", (_) -> {
                 currentClient.sendMessage("Sock", null, true);
                 return null;
             });
 
-        console.drawOptionsMenu(menu);
+        console.drawOptionsMenu(lastMenu);
     }
 }

@@ -96,7 +96,7 @@ public class ServerInterface implements Runnable {
         try {
             // close the server socket
             LinkedList<User> users = User.getUsers();
-            for (int i=0; i<users.size(); i++) {
+            for (int i=0; i<users.size(); i++) { // Close each client handler
                 ClientHandler handler = users.get(i).getHandler();
                 if (handler != null)
                     handler.close();
@@ -111,20 +111,20 @@ public class ServerInterface implements Runnable {
     }
 
     public static void softShutdown() {
-        if (!running)
+        if (!running) // If it isn't already close
             return;
 
         String message = STR."Shutting down in \{softShutdownTime/1000} sec";
 
-        Main.printMessage(message);
+        Main.printMessage(message); // Tell all the clients of the upcoming shutdown and disconnect them
         ClientHandler.replicateMessage("Shutdown", message, true);
 
-        try {
+        try { // Wait for the shutdown delay
             Thread.sleep(softShutdownTime);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        shutdown();
+        shutdown(); // Actual shutdown
     }
 }
