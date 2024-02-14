@@ -236,8 +236,8 @@ public class ClientHandler implements Runnable {
 
                                     // Process the new values picked by the player
                                     LinkedTreeMap<String, Object> casted = (LinkedTreeMap) data;
-                                    if (casted.containsKey("Amount") && casted.containsKey("Value")) // formulate a response by using the result of the processed data
-                                        newData.put("Success", lobby.processPicks(user, ((Number) casted.get("Amount")).intValue(), ((Number) casted.get("Value")).intValue()));
+                                    if (casted.containsKey("Amount") && casted.containsKey("Value") && casted.containsKey("Jolly")) // formulate a response by using the result of the processed data
+                                        newData.put("Success", lobby.processPicks(user, ((Number) casted.get("Amount")).intValue(), ((Number) casted.get("Value")).intValue(), (Boolean) casted.get("Jolly")));
                                     else
                                         newData.put("Error", "Missing data");
 
@@ -253,7 +253,7 @@ public class ClientHandler implements Runnable {
                                     }
 
                                     // Process dudo action
-                                    newData.put("Success", lobby.processPicks(user, 0, 7));
+                                    newData.put("Success", lobby.processPicks(user, 0, 7, false));
                                     break;
                                 }
 
@@ -266,7 +266,7 @@ public class ClientHandler implements Runnable {
                                     }
 
                                     // Process calza action
-                                    newData.put("Success", lobby.processPicks(user, 0, 8));
+                                    newData.put("Success", lobby.processPicks(user, 0, 8, false));
                                     break;
                                 }
 

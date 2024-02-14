@@ -434,13 +434,14 @@ public class Main {
         console.drawOptionsMenu(menu);
     }
 
-    private static void sendChoice(Integer amount, Integer value) {
+    private static void sendChoice(int amount, int value, boolean jolly) {
         console.clear();
         console.println("Pick sent, waiting..");
 
         LinkedTreeMap<String, Object> values = new LinkedTreeMap<>();
         values.put("Amount", amount);
         values.put("Value", value);
+        values.put("Jolly", jolly);
 
         currentClient.sendMessage("Choice", values, true);
     }
@@ -457,15 +458,18 @@ public class Main {
         console.println(STR."\{username} won the game!");
     }
 
-    private static int incrementAmount(int startValue) {
+    private static int incrementAmount(int startValue, int endValue) {
         console.clear();
         printStats();
-        console.println("Set amount to:");
+        console.println(STR."Set amount to: (must be \{endValue > 0 ? STR."between \{startValue} and \{endValue}" : STR."over \{startValue}"})");
 
         int val = -1;
         while (val <= startValue) {
             try {
                 val = Integer.parseInt(console.readln());
+                if (endValue > 0 && val > endValue)
+                    val = -1;
+
             } catch (Exception e) {
                 // Ignore
             }
@@ -474,7 +478,7 @@ public class Main {
         return val;
     }
 
-    private static void incrementValue(int startValue, int amount) {
+    private static void incrementValue(int startValue, int amount, int lastAmount) {
         OptionsMenu menu = new OptionsMenu();
         console.clear();
         printStats();
@@ -488,8 +492,29 @@ public class Main {
         console.println("Set value to:");
         for (int i=startValue+1; i<=(one ? 1 : 6); i++) {
             int finalI = i;
-            menu.addOption(String.valueOf(STR."\{finalI}\{i==1 ? " (jolly)" : ""}"), (_) -> {
-                sendChoice(amount, finalI);
+            boolean isJolly = finalI==1;
+
+            menu.addOption(String.valueOf(STR."\{finalI}\{isJolly ? " (jolly)" : ""}"), (_) -> {
+                if (isJolly) {
+                    menu.clearOptions();
+                    console.clear();
+                    printStats();
+
+                    console.println("Do you want to choose the amount?");
+                    menu.addOption("Yes", (_) -> {
+                        sendChoice(incrementAmount(0, (int) Math.ceil((double) lastAmount/2)), finalI, true);
+                        return null;
+                    });
+
+                    menu.addOption("No", (_) -> {
+                        sendChoice(amount, finalI, false);
+                        return null;
+                    });
+
+                    console.drawOptionsMenu(menu);
+                } else
+                    sendChoice(amount, finalI, false);
+
                 return null;
             });
         }
@@ -537,12 +562,12 @@ public class Main {
 
                 if ((boolean) data.get(0)) {
                     lastMenu.addOption("Increment amount", (_) -> {
-                        sendChoice(incrementAmount(startAmount), 0);
+                        sendChoice(incrementAmount(startAmount, 0), 0, false);
                         return null;
                     });
 
                     lastMenu.addOption("Increment value", (_) -> {
-                        incrementValue(startValue, 0);
+                        incrementValue(startValue, 0, startAmount);
                         return null;
                     });
 
@@ -555,8 +580,8 @@ public class Main {
                 }
                 else {
                     lastMenu.addOption("Insert values", (_) -> {
-                        int amount = incrementAmount(startAmount);
-                        incrementValue(startValue, amount);
+                        int amount = incrementAmount(startAmount, 0);
+                        incrementValue(startValue, amount, 0);
                         return null;
                     });
                 }

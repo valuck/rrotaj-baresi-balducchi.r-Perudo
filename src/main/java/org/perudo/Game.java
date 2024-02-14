@@ -218,7 +218,7 @@ public class Game {
         }
     }
 
-    public boolean processPicks(User player, int amount, int value) {
+    public boolean processPicks(User player, int amount, int value, boolean jolly) {
         User current = getUserByShift(); // get the user on turn
         boolean tookAction = false; // whenever calza or dodo is used
 
@@ -287,9 +287,11 @@ public class Game {
                 else if (value < 6)
                     value = value < this.lastValue ? this.lastValue + 1 : value; // Adjust the value to prevent exploiting
 
+                if (value == 1 && jolly)
+                    this.lastAmount = Math.min(amount, (int) Math.ceil((double) amount / 2));
+
                 this.lastValue = value; // Update the value
             }
-
             // Sent the text to sent to each client
             picked = picked + STR."Amount: \{this.lastAmount}, Value: \{this.lastValue == 1 ? "J" : this.lastValue}";
             this.lastPlayer = current; // Update the last player
