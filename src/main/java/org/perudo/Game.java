@@ -211,7 +211,7 @@ public class Game {
     private void setupTurn() {
         this.lastPlayer = null; // Set to default
         this.lastAmount = 0;
-        this.lastValue = 0;
+        this.lastValue = 1;
 
         for (User player : this.players) { // Send the dice of each player to their client
             diceUpdate(player, false);
@@ -275,10 +275,14 @@ public class Game {
         }
         else { // If it was a pick
             boolean am = amount > 0; // Check if it's the amount being edited
-            amount = amount < this.lastAmount ? this.lastAmount + 1 : amount; // Adjust the amount to prevent exploiting
 
-            if (am) // Update the amount
-                this.lastAmount = amount;
+            if (jolly)
+                am = false;
+            else {
+                amount = amount < this.lastAmount ? this.lastAmount + 1 : amount; // Adjust the amount to prevent exploiting
+                if (am) // Update the amount
+                    this.lastAmount = amount;
+            }
 
             if (!am || this.lastPlayer == null) { // If the amount is not being edited, or it's the first turn after any action
                 if (this.lastValue >= 6) // If the value reached its max
@@ -288,7 +292,7 @@ public class Game {
                     value = value < this.lastValue ? this.lastValue + 1 : value; // Adjust the value to prevent exploiting
 
                 if (value == 1 && jolly)
-                    this.lastAmount = Math.min(amount, (int) Math.ceil((double) amount / 2));
+                    this.lastAmount = Math.min(amount, (int) Math.ceil((double) this.lastAmount / 2));
 
                 this.lastValue = value; // Update the value
             }

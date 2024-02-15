@@ -461,7 +461,7 @@ public class Main {
     private static int incrementAmount(int startValue, int endValue) {
         console.clear();
         printStats();
-        console.println(STR."Set amount to: (must be \{endValue > 0 ? STR."between \{startValue} and \{endValue}" : STR."over \{startValue}"})");
+        console.println(STR."Set amount to: (must be \{endValue > 0 ? STR."between \{startValue +1} and \{endValue}" : STR."over \{startValue}"})");
 
         int val = -1;
         while (val <= startValue) {
