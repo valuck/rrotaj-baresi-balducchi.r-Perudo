@@ -537,9 +537,7 @@ public class Main {
                 console.println("Results:");
                 lastMenu.clearOptions();
 
-                ((ArrayList) data.get(0)).forEach((value) -> {
-                    console.println((String) value);
-                });
+                ((ArrayList) data.get(0)).forEach((value) -> console.println((String) value));
 
                 console.println(" ");
                 console.println((String) data.get(2));

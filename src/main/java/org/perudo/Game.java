@@ -340,7 +340,6 @@ public class Game {
             // Pass to the next player updating the database
             ServerStorage.incrementLobbyShift(this.lobbyId);
             this.startShift(canDudo); // Recaller, retrying to start the new round
-            return;
         } else {
             this.sockUpdate(true); // Tell the clients who can claim Calza
             this.pickUpdate(player, canDudo); // Tell the clients who's going to pick
@@ -487,7 +486,7 @@ public class Game {
             if (this.lastPlayer != null) // Put the last player too, if there
                 blacklist.put(this.lastPlayer.getCurrentToken(), true);
 
-            this.finished.forEach((player, value) -> { // Also put all the losers in it, SKILL ISSUE!!!1!1
+            this.finished.forEach((player, _) -> { // Also put all the losers in it, SKILL ISSUE!!!1!1
                 blacklist.put(player, true);
             });
         }
@@ -496,7 +495,7 @@ public class Game {
         this.replicateMessage("Sock", replicatedData, true, blacklist);
         replicatedData.replace("Sock", false);
 
-        blacklist.forEach((token, value) -> { // Tell all the blacklisted ones that they cant anymore
+        blacklist.forEach((token, _) -> { // Tell all the blacklisted ones that they cant anymore
             User player = User.getUserByToken(token); // Get the player from the token
             if (player != null) {
                 ClientHandler handler = player.getHandler(); // Get his handler
