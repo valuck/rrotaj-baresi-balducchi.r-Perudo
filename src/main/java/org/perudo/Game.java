@@ -251,7 +251,7 @@ public class Game {
                     this.dudoUpdate(false, player, true); // Tell results to the clients
                 }
             else // If it was dudo
-                if (correct <= this.lastAmount) {
+                if (correct >= this.lastAmount) {
                     ServerStorage.incrementDice(player.getCurrentToken(), -1); // Decrease dice in the player's database
                     this.dudoUpdate(false, player, false); // Tell results to the clients
                 } else {
@@ -267,7 +267,7 @@ public class Game {
             }
 
             try {
-                Thread.sleep(5000);
+                Thread.sleep(8000);
                 setupTurn(); // Wait five seconds and start a new round
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
