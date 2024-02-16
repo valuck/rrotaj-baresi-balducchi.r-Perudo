@@ -180,7 +180,11 @@ public class Main {
         } else {
             int port = Integer.parseInt(console.readln());
             ClientStorage.updateSetting("port", port, true);
-            connectClient(address, port);
+
+            if (isServerPort)
+                connectServer(port);
+            else
+                connectClient(address, port);
         }
     }
 
