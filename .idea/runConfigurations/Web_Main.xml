@@ -1,0 +1,31 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Web-Main" type="com.poratu.idea.plugins.tomcat">
+    <predefined_log_file enabled="true" id="Tomcat Localhost Log" />
+    <predefined_log_file enabled="true" id="Tomcat Access Log" />
+    <predefined_log_file id="Tomcat Catalina Log" />
+    <predefined_log_file id="Tomcat Manager Log" />
+    <predefined_log_file id="Tomcat Host Manager Log" />
+    <option name="catalinaBase" value="C:\Users\BLDRCR05A25E333W\.SmartTomcat\rrotaj-baresi-balducchi.r-Perudo\Perudo" />
+    <option name="contextPath" value="/" />
+    <option name="docBase" value="C:\Users\BLDRCR05A25E333W\IdeaProjects\rrotaj-baresi-balducchi.r-Perudo\src\main\webapp" />
+    <option name="envOptions">
+      <map />
+    </option>
+    <option name="extraClassPath" value="" />
+    <option name="tomcatInfo">
+      <TomcatInfo>
+        <option name="name" value="Apache Tomcat/8.5.87" />
+        <option name="path" value="$PROJECT_DIR$/../../../../xampp/tomcat" />
+        <option name="version" value="8.5.87.0" />
+      </TomcatInfo>
+    </option>
+    <option name="vmOptions" value="" />
+    <module name="Perudo" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="BuildArtifacts" enabled="true">
+        <artifact name="Perudo:jar" />
+      </option>
+    </method>
+  </configuration>
+</component>

@@ -54,6 +54,7 @@
                                 <includes>
                                     <include>org.apache.logging.log4j:log4j-core</include>
                                     <include>org.apache.logging.log4j:log4j-api</include>
+                                    <include>javax.servlet:javax.servlet-api</include>
                                     <include>com.mysql:mysql-connector-j</include>
                                     <include>com.google.code.gson:gson</include>
                                     <include>de.mkammerer:argon2-jvm</include>
@@ -97,6 +98,13 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>3.0.0-beta1</version>
+        </dependency>
+        <!-- https://central.sonatype.com/artifact/javax.servlet/javax.servlet-api -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version> <!-- Or the version you prefer -->
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
