@@ -1,91 +1,21 @@
-package org.perudo;
+package WebAdapter;
 
 import Messaging.Message;
-import Messaging.User;
 import Storage.ClientStorage;
 import com.google.gson.internal.LinkedTreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.perudo.ClientInterface;
+import org.perudo.Main;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ConnectException;
-import java.net.Socket;
 import java.net.SocketException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Objects;
 
-public class ClientInterface implements Runnable {
-    private static final Logger logger = LogManager.getLogger(ClientInterface.class);
-    private Timestamp ping_start;
-    protected Timestamp ping_end;
-    private Socket clientSocket;
-    protected BufferedReader in;
-    private PrintWriter out;
-    protected boolean running;
-    protected User server;
-
-    public ClientInterface(String address, Integer port) {
-        try {
-            // Open a new client socket to the selected port and address, open input & output
-            this.clientSocket = new Socket(address, port);
-            this.out = new PrintWriter(clientSocket.getOutputStream(), true);
-            this.in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-            this.running = true;
-            this.initConnection(); // Initialize connection with the server to share RSA keys.
-
-            // Connection checking thread
-            new Thread(() -> {
-                while (true) { // ping the server every 3 sec
-                    Timestamp newTime = new Timestamp(System.currentTimeMillis());
-
-                    if (server.getEncodingKey() != null) { // if connection is initialized
-                        if (ping_end != null) {
-                            long ping = Math.abs(ping_end.getTime() - ping_start.getTime()); // calculate ping
-                            // System.out.println(STR."\{ping}ms");
-                            // get ping event from here!
-                            Main.setPing(ping);
-
-                            if (ping > 10000) { // if over 10 seconds
-                                String message = "Connection lost or ping too high";
-                                logger.warn(message);
-                                // get connection lost event from here!
-                                Main.printRestart(message);
-                                close();
-                                break; // exits the loop
-                            }
-                        }
-                        else // Initialize ping
-                            ping_end = newTime;
-
-                        ping_start = newTime;
-                        if (!sendMessage("Ping", null, true)) // send a ping message
-                            break; // Client already closed, disconnect
-                    }
-
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }).start();
-        } catch (ConnectException e) {
-            this.running = false;
-            logger.warn("Server connection refused!");
-            Main.printRestart("Connection refused!");
-
-        } catch (Exception e) {
-            this.running = false;
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean isSuccess(LinkedTreeMap<String, Object> data) {
-        return data != null && data.containsKey("Success") && (boolean) data.get("Success");
+public class SessionAdapter extends ClientInterface {
+    private static final Logger logger = LogManager.getLogger(SessionAdapter.class);
+    public SessionAdapter(String address, Integer port) {
+        super(address, port);
     }
 
     @Override
@@ -300,67 +230,5 @@ public class ClientInterface implements Runnable {
         } catch (Exception e) {
             throw new RuntimeException(STR."Error while listening for the server\{e}");
         }
-    }
-
-    public void initConnection() {
-        // Initialize the connection between client and server
-        if (!this.running)
-            return;
-
-        // Create a new user as the server
-        this.server = new User();
-        this.server.setUsername("Server");
-
-        // Validate connection and share RSA keys with the server
-        this.sendMessage("Connection", null, true);
-    }
-
-    public boolean sendMessage(String scope, Object data, boolean encode) {
-        if (!this.running)
-            return false;
-
-        // Wait for the sever to share it's RSA key if not present
-        if (!Objects.equals(scope, "Connection"))
-            while (this.server.getEncodingKey() == null) {
-                try { // Yields until the server replies
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        // Send a new message to the server
-        Message msg = new Message(this.server, scope, data, encode);
-        out.println(msg.toJson());
-
-        return true;
-    }
-
-    public void close() {
-        if (!this.running)
-            return;
-
-        // Stop listening for the server
-        this.running = false;
-
-        try {
-            logger.warn("Client closing");
-            // Close clientSocket, input & output
-            if (this.clientSocket != null && !this.clientSocket.isClosed())
-                this.clientSocket.close();
-
-            if (this.out != null)
-                this.out.close();
-
-            if (this.in != null)
-                this.in.close();
-
-        } catch (Exception e) {
-            logger.error("Error while closing the client", e);
-        }
-    }
-
-    public boolean isRunning() {
-        return this.running;
     }
 }

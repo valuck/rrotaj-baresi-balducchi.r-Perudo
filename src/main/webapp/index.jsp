@@ -7,13 +7,15 @@
 	<body>
 		<h1>Start as:</h1>
 		<form action="/MainServlet" method="get">
-            <input type="radio" name="type" value="client" id="client" checked>
+			<input type="hidden" name="scope" value="setup">
+		
+            <input type="radio" name="type" value="client" checked>
             <strong>Client</strong><br><br>
 
-            <input type="radio" name="type" value="server" id="server">
+            <input type="radio" name="type" value="server">
             <strong>Server</strong><br><br>
 
-            <button type="submit" id="submit">Confirm</button>
+            <button type="submit">Confirm</button>
         </form>
 	</body>
 </html>

@@ -127,4 +127,22 @@ public class ServerInterface implements Runnable {
 
         shutdown(); // Actual shutdown
     }
+
+    public static String getHostAddress() {
+        if (!running)
+            return "";
+
+        return serverSocket.getInetAddress().getHostAddress();
+    }
+
+    public static int getAccessPort() {
+        if (!running)
+            return 0;
+
+        return serverSocket.getLocalPort();
+    }
+
+    public static boolean isRunning() {
+        return running;
+    }
 }

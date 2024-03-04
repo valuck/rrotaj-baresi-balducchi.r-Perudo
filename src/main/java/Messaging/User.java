@@ -44,6 +44,9 @@ public class User {
     }
 
     public static User getUserByName(String username) {
+        if (username == null)
+            return null;
+
         // returns the user with the specified name, if registered
         for (int i=0; i<users.size(); i++) { // foreach loops can give an error
             User user = users.get(i);
