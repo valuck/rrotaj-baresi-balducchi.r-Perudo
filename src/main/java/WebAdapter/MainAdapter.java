@@ -1,5 +1,6 @@
 package WebAdapter;
 
+import Storage.ServerStorage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.perudo.ServerInterface;
@@ -19,8 +20,10 @@ public class MainAdapter extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String responsePage = "index.jsp";
+        HttpSession session = request.getSession(true);
+
         if (ServerInterface.isRunning()) {
-            if (!ServerInterface.getHostAddress().equals(request.getRemoteAddr())) {
+            if (session.getAttribute("owner") != null) { //!ServerInterface.getHostAddress().equals(request.getRemoteAddr())) {
                 request.setAttribute("error", "Not authorized");
             }
 
@@ -30,6 +33,17 @@ public class MainAdapter extends HttpServlet {
 
                 case "shutdown": {
                     ServerInterface.shutdown();
+                    break;
+                }
+
+                case "softshut": {
+                    ServerInterface.softShutdown();
+                    break;
+                }
+
+                case "erase": {
+                    ServerStorage.eraseDatabase(true);
+                    ServerInterface.softShutdown();
                     break;
                 }
 
@@ -52,8 +66,6 @@ public class MainAdapter extends HttpServlet {
         String responsePage = "index.jsp";
 
         HttpSession session = request.getSession(true);
-        session.setMaxInactiveInterval(600); // 10m
-
         SessionAdapter currentClient = (SessionAdapter) session.getAttribute("user");
         boolean logged = currentClient != null || session.getAttribute("owner") != null;
 
