@@ -102,8 +102,11 @@ public class MainAdapter extends HttpServlet {
                 } else if (!logged && port > 0) {
                     new Thread(new ServerInterface(port)).start();
                     session.setAttribute("owner", true);
+                    request.setAttribute("address", STR."\{ServerInterface.getHostAddress()}:\{ServerInterface.getAccessPort()}");
                     responsePage = "server.jsp";
                 }
+                else
+                    request.setAttribute("error", "Invalid input");
 
                 break;
             }

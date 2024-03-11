@@ -5,9 +5,9 @@
     <predefined_log_file id="Tomcat Catalina Log" />
     <predefined_log_file id="Tomcat Manager Log" />
     <predefined_log_file id="Tomcat Host Manager Log" />
-    <option name="catalinaBase" value="C:\Users\Utente\.SmartTomcat\rrotaj-baresi-balducchi.r-Perudo\Perudo" />
+    <option name="catalinaBase" value="C:\Users\BLDRCR05A25E333W\.SmartTomcat\rrotaj-baresi-balducchi.r-Perudo\Perudo" />
     <option name="contextPath" value="/" />
-    <option name="docBase" value="C:\Users\Utente\IdeaProjects\rrotaj-baresi-balducchi.r-Perudo\src\main\webapp" />
+    <option name="docBase" value="C:\Users\BLDRCR05A25E333W\IdeaProjects\rrotaj-baresi-balducchi.r-Perudo\src\main\webapp" />
     <option name="envOptions">
       <map />
     </option>

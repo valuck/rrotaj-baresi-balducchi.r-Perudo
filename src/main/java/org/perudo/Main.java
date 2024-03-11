@@ -288,17 +288,25 @@ public class Main {
     }
 
     public static void printMessage(String message) {
+        if (console == null)
+            return;
+
         console.println(message);
     }
 
     public static void printSoloMessage(String message) {
+        if (console == null)
+            return;
+
         console.clear();
         console.println(message);
     }
 
     public static void printRestart(String message) {
-        console.setTitle("Perudo");
+        if (console == null)
+            return;
 
+        console.setTitle("Perudo");
         if (currentClient != null)
             currentClient.close();
 
@@ -316,6 +324,9 @@ public class Main {
     }
 
     public static void printLogin() {
+        if (console == null)
+            return;
+
         console.clear();
         console.println("Please enter the username you would like to use:");
         String old = (String) ClientStorage.getSetting("username");
@@ -350,6 +361,9 @@ public class Main {
     }
 
     public static void printLobbies(LinkedTreeMap<String, String> publicLobbies, LinkedTreeMap<String, String> privateLobbies) {
+        if (console == null)
+            return;
+
         console.clear();
         console.println("Public Lobbies");
         console.println("-----------------<");
@@ -400,7 +414,7 @@ public class Main {
     }
 
     private static void printPlayers(ArrayList<String> players) {
-        if (players == null || players.isEmpty())
+        if (console == null || players == null || players.isEmpty())
             return;
 
         players.forEach((value) -> console.println(value));
@@ -408,6 +422,9 @@ public class Main {
     }
 
     public static void printLobbyRoom(String name, ArrayList<String> players, String host, Number size, ArrayList<Object> list) {
+        if (console == null)
+            return;
+
         Main.size = size.intValue();
         Main.players = players;
         Main.lobby = name;
@@ -439,6 +456,9 @@ public class Main {
     }
 
     private static void sendChoice(int amount, int value, boolean jolly) {
+        if (console == null)
+            return;
+
         console.clear();
         console.println("Pick sent, waiting..");
 
@@ -451,6 +471,9 @@ public class Main {
     }
 
     private static void printStats() {
+        if (console == null)
+            return;
+
         console.println("Your dice:");
         console.println(Main.dice);
         console.println("Last choice:");
@@ -459,6 +482,9 @@ public class Main {
     }
 
     public static void printWinner(String username) {
+        if (console == null)
+            return;
+
         console.println(STR."\{username} won the game!");
     }
 
@@ -527,6 +553,9 @@ public class Main {
     }
 
     public static void printGame(String scope, ArrayList<Object> data) {
+        if (console == null)
+            return;
+
         console.clear();
         console.println(STR."\{ping}ms");
         printPlayers(Main.players);
